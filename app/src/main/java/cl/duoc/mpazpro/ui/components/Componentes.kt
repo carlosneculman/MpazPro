@@ -13,13 +13,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.*
 import androidx.exifinterface.media.ExifInterface
-import cl.duoc.mpazpro.domain.Campo
+import cl.duoc.mpazpro.Campo
 import cl.duoc.mpazpro.ui.theme.*
 
 @Composable
@@ -77,7 +78,7 @@ fun BarraProgreso(fraccion: Float, color: Color) {
 @Composable
 fun FotoPerfil(ruta: String?, tam: Dp, conInsigniaCamara: Boolean = false, onClickCamara: () -> Unit = {}) {
     val bit = remember(ruta) { try { BitmapFactory.decodeFile(ruta)?.let {
-        b -> val g = when (ExifInterface(ruta!!).getAttributeInt(ExifInterface.TAG_ORIENTATION, 1)) {
+            b -> val g = when (ExifInterface(ruta!!).getAttributeInt(ExifInterface.TAG_ORIENTATION, 1)) {
         6 -> 90f; 3 -> 180f; 8 -> 270f; else -> 0f }; if (g != 0f)
 
         android.graphics.Bitmap.createBitmap(b, 0, 0, b.width, b.height, Matrix().apply {

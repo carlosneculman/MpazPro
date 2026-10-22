@@ -1,6 +1,7 @@
 package cl.duoc.mpazpro.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,7 @@ import cl.duoc.mpazpro.domain.Opciones
 import cl.duoc.mpazpro.nativo.*
 import cl.duoc.mpazpro.ui.components.*
 import cl.duoc.mpazpro.ui.theme.ErrorRojo
+import cl.duoc.mpazpro.ui.theme.Primario
 import cl.duoc.mpazpro.viewmodel.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,7 +28,7 @@ fun PerfilInicialScreen(vol: () -> Unit = {}, ok: () -> Unit, vm: PerfilViewMode
     val ui by vm.form.collectAsStateWithLifecycle()
     val u by vm.usuario.collectAsStateWithLifecycle()
     LaunchedEffect(ui.guardado) { if (ui.guardado) ok() }
-    val cam = rememberCamara(vm::onFoto) {}
+    val cam = rememberCamara(vm::onFoto)
 
     ContenidoCentrado {
         IconButton(onClick = vol, modifier = Modifier.offset(x = (-12).dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
@@ -74,7 +76,7 @@ fun PerfilInicialScreen(vol: () -> Unit = {}, ok: () -> Unit, vm: PerfilViewMode
 fun PerfilScreen(ini: () -> Unit, sal: () -> Unit, vm: PerfilViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
     val u by vm.usuario.collectAsStateWithLifecycle()
     val noti = rememberPermisoNotificaciones { vm.recordatorios(it) }
-    val cam = rememberCamara(vm::onFoto) {}
+    val cam = rememberCamara(vm::onFoto)
 
     Scaffold(
         bottomBar = {
