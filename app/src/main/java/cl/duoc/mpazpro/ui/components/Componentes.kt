@@ -1,5 +1,6 @@
 package cl.duoc.mpazpro.ui.components
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import androidx.compose.foundation.*
@@ -10,18 +11,23 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.*
 import androidx.exifinterface.media.ExifInterface
 import cl.duoc.mpazpro.Campo
 import cl.duoc.mpazpro.ui.theme.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ContenidoCentrado(c: @Composable ColumnScope.() -> Unit) {
@@ -38,8 +44,8 @@ fun BotonPrincipal(texto: String, onClick: () -> Unit, habilitado: Boolean = tru
 }
 
 @Composable
-fun CampoTexto(campo: Campo, onCambio: (String) -> Unit, etiqueta: String, icono: ImageVector, esClave: Boolean = false) {
-    var ver by remember { mutableStateOf(false) }
+fun CampoTexto(campo: Campo, onCambio: (String) -> Unit, etiqueta: String, icono: ImageVector, esClave: Boolean = false, tipo: KeyboardType? = null) {
+    var ver by rememberSaveable { mutableStateOf(false) }
     OutlinedTextField(
         value = campo.valor, onValueChange = onCambio, label = { Text(etiqueta, fontSize = 14.sp) },
         singleLine = true, isError = campo.error != null,
@@ -53,7 +59,7 @@ fun CampoTexto(campo: Campo, onCambio: (String) -> Unit, etiqueta: String, icono
         },
         supportingText = { if (campo.error != null) Text(campo.error!!, color = ErrorRojo) },
         visualTransformation = if (esClave && !ver) PasswordVisualTransformation() else VisualTransformation.None,
-        keyboardOptions = KeyboardOptions(keyboardType = if (esClave) KeyboardType.Password else KeyboardType.Text),
+        keyboardOptions = KeyboardOptions(keyboardType = tipo ?: if (esClave) KeyboardType.Password else KeyboardType.Text),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = Primario, unfocusedBorderColor = if (campo.valido) Exito else Color.LightGray, errorBorderColor = ErrorRojo,
             focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, errorContainerColor = Color.White
@@ -77,17 +83,17 @@ fun BarraProgreso(fraccion: Float, color: Color) {
 
 @Composable
 fun FotoPerfil(ruta: String?, tam: Dp, conInsigniaCamara: Boolean = false, onClickCamara: () -> Unit = {}) {
-    val bit = remember(ruta) { try { BitmapFactory.decodeFile(ruta)?.let {
-            b -> val g = when (ExifInterface(ruta!!).getAttributeInt(ExifInterface.TAG_ORIENTATION, 1)) {
-        6 -> 90f; 3 -> 180f; 8 -> 270f; else -> 0f }; if (g != 0f)
-
-        android.graphics.Bitmap.createBitmap(b, 0, 0, b.width, b.height, Matrix().apply {
-            postRotate(g) }, true) else b } } catch (e: Exception) { null }?.asImageBitmap()
+    val lado = with(LocalDensity.current) { tam.roundToPx() }
+    // Se decodifica fuera del hilo principal y reducida al tamaño que se muestra
+    // (antes se leía la foto completa de la cámara en el hilo de UI: tirones y riesgo de OutOfMemory).
+    val bit by produceState<ImageBitmap?>(null, ruta, lado) {
+        value = withContext(Dispatchers.IO) { cargarFoto(ruta, lado) }
     }
 
     Box(Modifier.size(if (conInsigniaCamara) tam + 12.dp else tam), contentAlignment = Alignment.Center) {
         Box(Modifier.size(tam).clip(CircleShape).background(Color(0xFFE8EAF6)), Alignment.Center) {
-            if (bit != null) Image(bit, "", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+            val imagen = bit
+            if (imagen != null) Image(imagen, "", Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
             else Icon(Icons.Default.Person, "", Modifier.size(tam * 0.6f), tint = Primario)
         }
 
@@ -96,5 +102,36 @@ fun FotoPerfil(ruta: String?, tam: Dp, conInsigniaCamara: Boolean = false, onCli
                 Icon(Icons.Default.CameraAlt, null, tint = Color.White, modifier = Modifier.size(18.dp))
             }
         }
+    }
+}
+
+private fun cargarFoto(ruta: String?, lado: Int): ImageBitmap? {
+    if (ruta.isNullOrBlank()) return null
+    return try {
+        val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(ruta, limites)
+        if (limites.outWidth <= 0 || limites.outHeight <= 0) return null
+
+        var muestra = 1
+        while (limites.outWidth / (muestra * 2) >= lado && limites.outHeight / (muestra * 2) >= lado) muestra *= 2
+        val original = BitmapFactory.decodeFile(ruta, BitmapFactory.Options().apply { inSampleSize = muestra })
+            ?: return null
+
+        val grados = when (ExifInterface(ruta).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> 90f
+            ExifInterface.ORIENTATION_ROTATE_180 -> 180f
+            ExifInterface.ORIENTATION_ROTATE_270 -> 270f
+            else -> 0f
+        }
+        val corregida = if (grados == 0f) original else {
+            val matriz = Matrix().apply { postRotate(grados) }
+            Bitmap.createBitmap(original, 0, 0, original.width, original.height, matriz, true)
+                .also { if (it !== original) original.recycle() }
+        }
+        corregida.asImageBitmap()
+    } catch (e: Exception) {
+        null
+    } catch (e: OutOfMemoryError) {
+        null
     }
 }

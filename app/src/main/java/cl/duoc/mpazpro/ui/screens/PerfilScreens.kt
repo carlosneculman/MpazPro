@@ -24,19 +24,21 @@ import cl.duoc.mpazpro.viewmodel.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PerfilInicialScreen(vol: () -> Unit = {}, ok: () -> Unit, vm: PerfilViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun PerfilInicialScreen(ok: () -> Unit, vol: (() -> Unit)? = null, vm: PerfilViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
     val ui by vm.form.collectAsStateWithLifecycle()
     val u by vm.usuario.collectAsStateWithLifecycle()
     LaunchedEffect(ui.guardado) { if (ui.guardado) ok() }
     val cam = rememberCamara(vm::onFoto)
 
     ContenidoCentrado {
-        IconButton(onClick = vol, modifier = Modifier.offset(x = (-12).dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+        if (vol != null) {
+            IconButton(onClick = vol, modifier = Modifier.offset(x = (-12).dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+        }
         Text("Completa tu perfil", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         Spacer(Modifier.height(16.dp))
 
         Box(Modifier.fillMaxWidth(), Alignment.Center) {
-            FotoPerfil(u?.fotoPath, 100.dp, conInsigniaCamara = true, onClickCamara = cam)
+            FotoPerfil(u.fotoPath, 100.dp, conInsigniaCamara = true, onClickCamara = cam)
         }
         TextButton(onClick = cam, modifier = Modifier.align(Alignment.CenterHorizontally)) { Text("Tomar foto con la cámara", color = Primario) }
         Spacer(Modifier.height(16.dp))
@@ -45,9 +47,11 @@ fun PerfilInicialScreen(vol: () -> Unit = {}, ok: () -> Unit, vm: PerfilViewMode
         ExposedDropdownMenuBox(expanded = expRol, onExpandedChange = { expRol = it }) {
             OutlinedTextField(
                 value = ui.rol.valor, onValueChange = {}, readOnly = true, label = { Text("Rol") },
+                isError = ui.rol.error != null,
+                supportingText = { ui.rol.error?.let { Text(it, color = ErrorRojo) } },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expRol) },
-                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
-                shape = RoundedCornerShape(8.dp), modifier = Modifier.menuAnchor().fillMaxWidth()
+                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, errorContainerColor = Color.White),
+                shape = RoundedCornerShape(8.dp), modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
             )
             ExposedDropdownMenu(expanded = expRol, onDismissRequest = { expRol = false }) {
                 Opciones.roles.forEach { r -> DropdownMenuItem(text = { Text(r) }, onClick = { vm.onRol(r); expRol = false }) }
@@ -58,16 +62,19 @@ fun PerfilInicialScreen(vol: () -> Unit = {}, ok: () -> Unit, vm: PerfilViewMode
         ExposedDropdownMenuBox(expanded = expCurso, onExpandedChange = { expCurso = it }) {
             OutlinedTextField(
                 value = ui.curso.valor, onValueChange = {}, readOnly = true, label = { Text("Curso") },
+                isError = ui.curso.error != null,
+                supportingText = { ui.curso.error?.let { Text(it, color = ErrorRojo) } },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expCurso) },
-                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White),
-                shape = RoundedCornerShape(8.dp), modifier = Modifier.menuAnchor().fillMaxWidth()
+                colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White, errorContainerColor = Color.White),
+                shape = RoundedCornerShape(8.dp), modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
             )
             ExposedDropdownMenu(expanded = expCurso, onDismissRequest = { expCurso = false }) {
                 Opciones.cursos.forEach { c -> DropdownMenuItem(text = { Text(c) }, onClick = { vm.onCurso(c); expCurso = false }) }
             }
         }
 
-        Spacer(Modifier.weight(1f))
+        // (un Spacer con weight no funciona dentro de una columna con scroll, por eso altura fija)
+        Spacer(Modifier.height(16.dp))
         BotonPrincipal("Guardar y continuar", vm::guardar)
     }
 }
@@ -95,19 +102,19 @@ fun PerfilScreen(ini: () -> Unit, sal: () -> Unit, vm: PerfilViewModel = viewMod
             Text("Verifica que tus datos sean correctos", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(32.dp))
 
-            FotoPerfil(u?.fotoPath, 100.dp, conInsigniaCamara = true, onClickCamara = cam)
+            FotoPerfil(u.fotoPath, 100.dp, conInsigniaCamara = true, onClickCamara = cam)
             Spacer(Modifier.height(16.dp))
-            Text("${u?.nombre ?: ""} ${u?.apellido ?: ""}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("${u.nombre} ${u.apellido}", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(32.dp))
 
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                FilaDatoPerfil("Nombre", "${u?.nombre ?: ""} ${u?.apellido ?: ""}")
+                FilaDatoPerfil("Nombre", "${u.nombre} ${u.apellido}")
                 HorizontalDivider(color = Color(0xFFEEEEEE))
-                FilaDatoPerfil("Rol", u?.rol ?: "")
+                FilaDatoPerfil("Rol", u.rol ?: "—")
                 HorizontalDivider(color = Color(0xFFEEEEEE))
-                FilaDatoPerfil("Curso", u?.curso ?: "")
+                FilaDatoPerfil("Curso", u.curso ?: "—")
                 HorizontalDivider(color = Color(0xFFEEEEEE))
-                FilaDatoPerfil("Correo", u?.correo ?: "")
+                FilaDatoPerfil("Correo", u.correo)
                 HorizontalDivider(color = Color(0xFFEEEEEE))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -115,7 +122,7 @@ fun PerfilScreen(ini: () -> Unit, sal: () -> Unit, vm: PerfilViewModel = viewMod
                         Spacer(Modifier.width(8.dp))
                         Text("Recordatorios de estudio", fontSize = 14.sp, color = Color.Gray)
                     }
-                    Switch(checked = u?.recordatorios == true, onCheckedChange = {
+                    Switch(checked = u.recordatorios, onCheckedChange = {
                         if (it) noti() else vm.recordatorios(false) },
                         colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Primario))
                 }
