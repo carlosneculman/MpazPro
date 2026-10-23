@@ -71,7 +71,7 @@ fun AppNavHost(repositorio: UsuarioRepositorio) {
         }
         composable(Rutas.INICIO) {
             InicioScreen(
-                navM = { /* TODO: pantalla de lecciones de la materia */ },
+                navM = { /*TODO: PANTALLA DE LECCIONES DE LA MATERIA */ },
                 navP = { navController.navigate(Rutas.PERFIL) { launchSingleTop = true } }
             )
         }
@@ -79,6 +79,7 @@ fun AppNavHost(repositorio: UsuarioRepositorio) {
             PerfilScreen(
                 ini = { navController.popBackStack(Rutas.INICIO, inclusive = false) },
                 sal = { navController.irLimpiando(Rutas.LOGIN) }
+
             )
         }
     }
