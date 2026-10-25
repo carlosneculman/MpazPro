@@ -4,12 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,10 +28,10 @@ import cl.duoc.mpazpro.ui.theme.Primario
 fun DocenteScreen(
     navPerfil: () -> Unit
 ) {
-    var mostrarModalCrear by remember { mutableStateOf(false) }
-    var mostrarInforme by remember { mutableStateOf(false) }
-    var informeValidado by remember { mutableStateOf(false) }
-    var mensajeDescarga by remember { mutableStateOf(false) }
+    var mostrarModalCrear by rememberSaveable { mutableStateOf(false) }
+    var mostrarInforme by rememberSaveable { mutableStateOf(false) }
+    var informeValidado by rememberSaveable { mutableStateOf(false) }
+    var mensajeDescarga by rememberSaveable { mutableStateOf(false) }
 
     var listaLecciones by remember {
         mutableStateOf(Contenido.lecciones(Materia.LENGUAJE).toMutableList())
@@ -101,6 +104,7 @@ fun DocenteScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 items(listaLecciones) { leccion ->
@@ -139,7 +143,6 @@ fun DocenteScreen(
             }
         }
 
-        // Modal para crear lección con asignación de OA e Intentos
         if (mostrarModalCrear) {
             CrearLeccionDialog(
                 onDismiss = { mostrarModalCrear = false },
@@ -161,7 +164,10 @@ fun DocenteScreen(
                     }
                 },
                 text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(
+                        modifier = Modifier.verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
                         Text("Rendimiento del Curso (Tercero Básico A)", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text("• Promedio General: 85% de logro", fontSize = 13.sp)
                         Text("• Fortalezas: Comprensión de textos breves y vocales.", fontSize = 13.sp, color = Color(0xFF2E7D32))
@@ -180,7 +186,7 @@ fun DocenteScreen(
                         }
 
                         if (mensajeDescarga) {
-                            Text("📄 Informe guardado en Descargas (PDF)", fontSize = 12.sp, color = Primario, fontWeight = FontWeight.Bold)
+                            Text("Informe guardado en Descargas (PDF)", fontSize = 12.sp, color = Primario, fontWeight = FontWeight.Bold)
                         }
                     }
                 },
@@ -220,15 +226,18 @@ fun CrearLeccionDialog(
     onDismiss: () -> Unit,
     onGuardar: (Leccion) -> Unit
 ) {
-    var titulo by remember { mutableStateOf("") }
-    var descripcion by remember { mutableStateOf("") }
-    var intentos by remember { mutableStateOf("3") }
+    var titulo by rememberSaveable { mutableStateOf("") }
+    var descripcion by rememberSaveable { mutableStateOf("") }
+    var intentos by rememberSaveable { mutableStateOf("3") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Nueva Lección / Actividad", fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 OutlinedTextField(
                     value = titulo,
                     onValueChange = { titulo = it },

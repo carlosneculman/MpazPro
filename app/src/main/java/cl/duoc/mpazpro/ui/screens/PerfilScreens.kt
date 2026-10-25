@@ -3,12 +3,15 @@ package cl.duoc.mpazpro.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -33,76 +36,91 @@ fun PerfilInicialScreen(
     val u by vm.usuario.collectAsStateWithLifecycle()
     LaunchedEffect(ui.guardado) { if (ui.guardado) ok() }
     val cam = rememberCamara(vm::onFoto)
+    val scrollState = rememberScrollState()
 
     ContenidoCentrado {
-        if (vol != null) {
-            IconButton(onClick = vol, modifier = Modifier.offset(x = (-12).dp)) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
-            }
-        }
-        Text("Completa tu perfil", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        Spacer(Modifier.height(16.dp))
-
-        Box(Modifier.fillMaxWidth(), Alignment.Center) {
-            FotoPerfil(u.fotoPath, 100.dp, conInsigniaCamara = true, onClickCamara = cam)
-        }
-        TextButton(onClick = cam, modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Text("Tomar foto con la cámara", color = Primario)
-        }
-        Spacer(Modifier.height(16.dp))
-
-        var expRol by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(expanded = expRol, onExpandedChange = { expRol = it }) {
-            OutlinedTextField(
-                value = ui.rol.valor,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Rol") },
-                isError = ui.rol.error != null,
-                supportingText = { ui.rol.error?.let { Text(it, color = ErrorRojo) } },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expRol) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    errorContainerColor = Color.White
-                ),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-            )
-            ExposedDropdownMenu(expanded = expRol, onDismissRequest = { expRol = false }) {
-                Opciones.roles.forEach { r ->
-                    DropdownMenuItem(text = { Text(r) }, onClick = { vm.onRol(r); expRol = false })
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            if (vol != null) {
+                IconButton(
+                    onClick = vol,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .offset(x = (-12).dp)
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                 }
             }
-        }
+            Text("Completa tu perfil", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Spacer(Modifier.height(16.dp))
 
-        var expCurso by remember { mutableStateOf(false) }
-        ExposedDropdownMenuBox(expanded = expCurso, onExpandedChange = { expCurso = it }) {
-            OutlinedTextField(
-                value = ui.curso.valor,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Curso") },
-                isError = ui.curso.error != null,
-                supportingText = { ui.curso.error?.let { Text(it, color = ErrorRojo) } },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expCurso) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    errorContainerColor = Color.White
-                ),
-                shape = RoundedCornerShape(8.dp),
-                modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
-            )
-            ExposedDropdownMenu(expanded = expCurso, onDismissRequest = { expCurso = false }) {
-                Opciones.cursos.forEach { c ->
-                    DropdownMenuItem(text = { Text(c) }, onClick = { vm.onCurso(c); expCurso = false })
+            Box(Modifier.fillMaxWidth(), Alignment.Center) {
+                FotoPerfil(u.fotoPath, 100.dp, conInsigniaCamara = true, onClickCamara = cam)
+            }
+            TextButton(onClick = cam, modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text("Tomar foto con la cámara", color = Primario)
+            }
+            Spacer(Modifier.height(16.dp))
+
+            var expRol by rememberSaveable { mutableStateOf(false) }
+            ExposedDropdownMenuBox(expanded = expRol, onExpandedChange = { expRol = it }) {
+                OutlinedTextField(
+                    value = ui.rol.valor,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Rol") },
+                    isError = ui.rol.error != null,
+                    supportingText = { ui.rol.error?.let { Text(it, color = ErrorRojo) } },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expRol) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        errorContainerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                )
+                ExposedDropdownMenu(expanded = expRol, onDismissRequest = { expRol = false }) {
+                    Opciones.roles.forEach { r ->
+                        DropdownMenuItem(text = { Text(r) }, onClick = { vm.onRol(r); expRol = false })
+                    }
                 }
             }
-        }
 
-        Spacer(Modifier.height(16.dp))
-        BotonPrincipal("Guardar y continuar", vm::guardar)
+            Spacer(Modifier.height(8.dp))
+
+            var expCurso by rememberSaveable { mutableStateOf(false) }
+            ExposedDropdownMenuBox(expanded = expCurso, onExpandedChange = { expCurso = it }) {
+                OutlinedTextField(
+                    value = ui.curso.valor,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Curso") },
+                    isError = ui.curso.error != null,
+                    supportingText = { ui.curso.error?.let { Text(it, color = ErrorRojo) } },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expCurso) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        errorContainerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable).fillMaxWidth()
+                )
+                ExposedDropdownMenu(expanded = expCurso, onDismissRequest = { expCurso = false }) {
+                    Opciones.cursos.forEach { c ->
+                        DropdownMenuItem(text = { Text(c) }, onClick = { vm.onCurso(c); expCurso = false })
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(24.dp))
+            BotonPrincipal("Guardar y continuar", vm::guardar)
+        }
     }
 }
 
@@ -115,6 +133,7 @@ fun PerfilScreen(
     val u by vm.usuario.collectAsStateWithLifecycle()
     val noti = rememberPermisoNotificaciones { vm.recordatorios(it) }
     val cam = rememberCamara(vm::onFoto)
+    val scrollState = rememberScrollState()
 
     Scaffold(
         bottomBar = {
@@ -141,19 +160,20 @@ fun PerfilScreen(
                 .fillMaxSize()
                 .background(Color.White)
                 .padding(p)
+                .verticalScroll(scrollState)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text("Mi perfil", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
             Text("Verifica que tus datos sean correctos", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
             FotoPerfil(u.fotoPath, 100.dp, conInsigniaCamara = true, onClickCamara = cam)
             Spacer(Modifier.height(16.dp))
             Text("${u.nombre} ${u.apellido}".trim(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(24.dp))
 
-            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 FilaDatoPerfil("Nombre", "${u.nombre} ${u.apellido}".trim())
                 HorizontalDivider(color = Color(0xFFEEEEEE))
                 FilaDatoPerfil("Rol", u.rol ?: "—")
@@ -180,7 +200,7 @@ fun PerfilScreen(
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(32.dp))
             OutlinedButton(
                 onClick = {
                     vm.cerrarSesion()

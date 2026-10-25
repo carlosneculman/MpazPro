@@ -25,7 +25,7 @@ data class SolicitudRevision(
     val docente: String,
     val titulo: String,
     val descripcion: String,
-    var estado: String = "PENDIENTE" // PENDIENTE, APROBADA, RECHAZADA
+    var estado: String = "PENDIENTE"
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -98,6 +98,7 @@ fun UTPScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             LazyColumn(
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(solicitudes) { item ->

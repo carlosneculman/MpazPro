@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -13,6 +15,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -42,7 +45,13 @@ fun InicioScreen(
             }
         }
     ) { p ->
-        Column(Modifier.fillMaxSize().background(Color.White).padding(p).padding(horizontal = 20.dp)) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(p)
+                .padding(horizontal = 20.dp)
+        ) {
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(44.dp).clip(CircleShape).background(Primario), Alignment.Center) {
@@ -50,20 +59,23 @@ fun InicioScreen(
                 }
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text("Escuela Especial", fontSize = 12.sp, color = Color.Gray)
+                    Text("Escuela Escritora", fontSize = 12.sp, color = Color.Gray)
                     Text("Marcela Paz", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primario)
                 }
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(16.dp))
 
-            Text("¡Hola, Estudiante!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-            Text("¿Qué quieres aprender hoy?", fontSize = 18.sp, color = Color.DarkGray)
-            Spacer(Modifier.height(20.dp))
+            Text("¡Hola, Estudiante!", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+            Text("¿Qué quieres aprender hoy?", fontSize = 16.sp, color = Color.DarkGray)
+            Spacer(Modifier.height(16.dp))
 
             LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
+                columns = GridCells.Adaptive(minSize = 140.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
             ) {
                 items(Materia.entries) { m ->
                     val c = m.colores()
@@ -71,18 +83,23 @@ fun InicioScreen(
                     val pct = Contenido.calcularProgreso(lecciones)
 
                     Box(
-                        Modifier.aspectRatio(0.85f).clip(RoundedCornerShape(24.dp)).background(c.principal).clickable { navM(m) }.padding(16.dp)
+                        Modifier
+                            .aspectRatio(0.95f)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(c.principal)
+                            .clickable { navM(m) }
+                            .padding(16.dp)
                     ) {
                         Column(Modifier.fillMaxSize()) {
-                            Box(Modifier.size(52.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)), Alignment.Center) {
-                                Icon(m.icono(), null, tint = Color.White, modifier = Modifier.size(28.dp))
+                            Box(Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)), Alignment.Center) {
+                                Icon(m.icono(), null, tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.weight(1f))
-                            Text(m.titulo, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp)
-                            Spacer(Modifier.height(12.dp))
-                            BarraProgreso(pct / 100f, Color.White)
+                            Text(m.titulo, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 22.sp)
                             Spacer(Modifier.height(8.dp))
-                            Text("$pct% completado", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            BarraProgreso(pct / 100f, Color.White)
+                            Spacer(Modifier.height(6.dp))
+                            Text("\$pct% completado", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -157,7 +174,7 @@ fun MateriaScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "${leccion.numero}. ${leccion.titulo}",
+                                text = "${leccion.numero}.${leccion.titulo}",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (estaBloqueada) Color.Gray else Color.Black
@@ -188,9 +205,10 @@ fun LeccionScreen(
     val lecciones = Contenido.lecciones(materia)
     val leccion = lecciones.find { it.numero.toString() == idLeccion }
 
-    var reproduciendoAudio by remember { mutableStateOf(false) }
-    var respuestaSeleccionada by remember { mutableStateOf<Int?>(null) }
-    var mostrarFeedback by remember { mutableStateOf(false) }
+    var reproduciendoAudio by rememberSaveable { mutableStateOf(false) }
+    var respuestaSeleccionada by rememberSaveable { mutableStateOf<Int?>(null) }
+    var mostrarFeedback by rememberSaveable { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -210,10 +228,11 @@ fun LeccionScreen(
                     .fillMaxSize()
                     .background(Color.White)
                     .padding(padding)
+                    .verticalScroll(scrollState)
                     .padding(20.dp)
             ) {
                 Text(text = leccion.titulo, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Button(
                     onClick = { reproduciendoAudio = !reproduciendoAudio },
@@ -246,7 +265,6 @@ fun LeccionScreen(
                         Text("¿Cuál es la respuesta correcta para completar esta lección?", fontSize = 14.sp, color = Color.Gray)
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Opciones de respuesta
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(
                                 onClick = { respuestaSeleccionada = 1; mostrarFeedback = true },
@@ -284,14 +302,16 @@ fun LeccionScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
                     onClick = {
                         Contenido.marcarComoCompletada(materia, leccion.numero)
                         navAtras()
                     },
-                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Primario),
                     shape = RoundedCornerShape(16.dp)
                 ) {
