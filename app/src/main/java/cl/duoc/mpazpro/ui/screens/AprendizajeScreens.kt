@@ -31,32 +31,34 @@ fun InicioScreen(
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
                 NavigationBarItem(selected = true, onClick = {},
-                    icon = { Icon(Icons.Default.Home, null) },
-                    label = { Text("Inicio") },
+                    icon = { Icon(Icons.Default.Home, null, Modifier.size(28.dp)) },
+                    label = { Text("Inicio", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(selectedIconColor = Primario,
                         selectedTextColor = Primario, indicatorColor = Color(0xFFE8EAF6)))
-                NavigationBarItem(selected = false, onClick = navP, icon = { Icon(Icons.Default.Person, null) },
-                    label = { Text("Perfil") }, colors = NavigationBarItemDefaults.colors(unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray))
+                NavigationBarItem(selected = false, onClick = navP,
+                    icon = { Icon(Icons.Default.Person, null, Modifier.size(28.dp)) },
+                    label = { Text("Perfil", fontSize = 14.sp) },
+                    colors = NavigationBarItemDefaults.colors(unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray))
             }
         }
     ) { p ->
-        Column(Modifier.fillMaxSize().background(Color.White).padding(p).padding(horizontal = 24.dp)) {
+        Column(Modifier.fillMaxSize().background(Color.White).padding(p).padding(horizontal = 20.dp)) {
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(36.dp).clip(CircleShape).background(Primario), Alignment.Center) {
-                    Icon(Icons.Default.School, null, Modifier.size(20.dp), tint = Color.White)
+                Box(Modifier.size(44.dp).clip(CircleShape).background(Primario), Alignment.Center) {
+                    Icon(Icons.Default.School, null, Modifier.size(24.dp), tint = Color.White)
                 }
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text("Escuela Especial", fontSize = 10.sp, color = Color.Gray)
-                    Text("Marcela Paz", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Primario)
+                    Text("Escuela Especial", fontSize = 12.sp, color = Color.Gray)
+                    Text("Marcela Paz", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primario)
                 }
             }
-            Spacer(Modifier.height(32.dp))
-
-            Text("Hola, Estudiante", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-            Text("¿Qué quieres aprender hoy?", fontSize = 16.sp, color = Color.Gray)
             Spacer(Modifier.height(24.dp))
+
+            Text("¡Hola, Estudiante!", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+            Text("¿Qué quieres aprender hoy?", fontSize = 18.sp, color = Color.DarkGray)
+            Spacer(Modifier.height(20.dp))
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
@@ -72,15 +74,15 @@ fun InicioScreen(
                         Modifier.aspectRatio(0.85f).clip(RoundedCornerShape(24.dp)).background(c.principal).clickable { navM(m) }.padding(16.dp)
                     ) {
                         Column(Modifier.fillMaxSize()) {
-                            Box(Modifier.size(48.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)), Alignment.Center) {
-                                Icon(m.icono(), null, tint = Color.White, modifier = Modifier.size(24.dp))
+                            Box(Modifier.size(52.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)), Alignment.Center) {
+                                Icon(m.icono(), null, tint = Color.White, modifier = Modifier.size(28.dp))
                             }
                             Spacer(Modifier.weight(1f))
-                            Text(m.titulo, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 22.sp)
+                            Text(m.titulo, color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp)
                             Spacer(Modifier.height(12.dp))
                             BarraProgreso(pct / 100f, Color.White)
                             Spacer(Modifier.height(8.dp))
-                            Text("$pct% completado", color = Color.White, fontSize = 10.sp)
+                            Text("$pct% completado", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -102,10 +104,10 @@ fun MateriaScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(materia.titulo, color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text(materia.titulo, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp) },
                 navigationIcon = {
                     IconButton(onClick = navAtras) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", tint = Color.White, modifier = Modifier.size(28.dp))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = colores.principal)
@@ -145,18 +147,18 @@ fun MateriaScreen(
 
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
+                                .size(48.dp)
                                 .clip(CircleShape)
                                 .background(bgTint),
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(icon, contentDescription = null, tint = iconTint)
+                            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(26.dp))
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "${leccion.numero}. ${leccion.titulo}",
-                                fontSize = 16.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (estaBloqueada) Color.Gray else Color.Black
                             )
@@ -167,7 +169,7 @@ fun MateriaScreen(
                             )
                         }
                         if (!estaBloqueada) {
-                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
+                            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray, modifier = Modifier.size(28.dp))
                         }
                     }
                 }
@@ -186,13 +188,17 @@ fun LeccionScreen(
     val lecciones = Contenido.lecciones(materia)
     val leccion = lecciones.find { it.numero.toString() == idLeccion }
 
+    var reproduciendoAudio by remember { mutableStateOf(false) }
+    var respuestaSeleccionada by remember { mutableStateOf<Int?>(null) }
+    var mostrarFeedback by remember { mutableStateOf(false) }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Lección", fontWeight = FontWeight.Bold) },
+                title = { Text("Lección ${leccion?.numero ?: ""}", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
                 navigationIcon = {
                     IconButton(onClick = navAtras) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", modifier = Modifier.size(28.dp))
                     }
                 }
             )
@@ -204,19 +210,79 @@ fun LeccionScreen(
                     .fillMaxSize()
                     .background(Color.White)
                     .padding(padding)
-                    .padding(24.dp)
+                    .padding(20.dp)
             ) {
-                Text(text = leccion.titulo, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = leccion.descripcion, fontSize = 16.sp, color = Color.Gray)
-                Spacer(modifier = Modifier.height(24.dp))
+                Text(text = leccion.titulo, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Button(
+                    onClick = { reproduciendoAudio = !reproduciendoAudio },
+                    colors = ButtonDefaults.buttonColors(containerColor = if (reproduciendoAudio) Color(0xFF2E7D32) else Primario),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(if (reproduciendoAudio) Icons.Default.VolumeUp else Icons.Default.VolumeMute, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (reproduciendoAudio) "Reproduciendo audio..." else "Escuchar instrucción con audio", fontSize = 14.sp)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = leccion.contenido,
-                    fontSize = 16.sp,
-                    lineHeight = 24.sp,
+                    fontSize = 18.sp,
+                    lineHeight = 26.sp,
                     color = Color.DarkGray
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Pregunta de comprobación:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text("¿Cuál es la respuesta correcta para completar esta lección?", fontSize = 14.sp, color = Color.Gray)
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Opciones de respuesta
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedButton(
+                                onClick = { respuestaSeleccionada = 1; mostrarFeedback = true },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (respuestaSeleccionada == 1) Color(0xFFE8F5E9) else Color.White
+                                )
+                            ) { Text("Opción A", fontSize = 14.sp) }
+
+                            OutlinedButton(
+                                onClick = { respuestaSeleccionada = 2; mostrarFeedback = true },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    containerColor = if (respuestaSeleccionada == 2) Color(0xFFFFEBEE) else Color.White
+                                )
+                            ) { Text("Opción B", fontSize = 14.sp) }
+                        }
+
+                        if (mostrarFeedback) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            if (respuestaSeleccionada == 1) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("¡Correcto! Respuesta acertada en el intento 1 de 3.", fontSize = 13.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                }
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Cancel, contentDescription = null, tint = Color(0xFFC62828))
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("Incorrecto. Intenta de nuevo (Quedan 2 intentos).", fontSize = 13.sp, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.weight(1f))
 
@@ -225,10 +291,11 @@ fun LeccionScreen(
                         Contenido.marcarComoCompletada(materia, leccion.numero)
                         navAtras()
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primario)
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primario),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Marcar como Completada")
+                    Text("Marcar como Completada", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
         } else {
