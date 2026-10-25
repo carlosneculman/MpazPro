@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +26,10 @@ fun DocenteScreen(
     navPerfil: () -> Unit
 ) {
     var mostrarModalCrear by remember { mutableStateOf(false) }
+    var mostrarInforme by remember { mutableStateOf(false) }
+    var informeValidado by remember { mutableStateOf(false) }
+    var mensajeDescarga by remember { mutableStateOf(false) }
+
     var listaLecciones by remember {
         mutableStateOf(Contenido.lecciones(Materia.LENGUAJE).toMutableList())
     }
@@ -37,6 +39,9 @@ fun DocenteScreen(
             TopAppBar(
                 title = { Text("Panel Docente", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = { mostrarInforme = true }) {
+                        Icon(Icons.Default.Assessment, contentDescription = "Informe Pedagógico", tint = Primario)
+                    }
                     IconButton(onClick = navPerfil) {
                         Icon(Icons.Default.Person, contentDescription = "Perfil")
                     }
@@ -69,22 +74,31 @@ fun DocenteScreen(
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Gestión de Contenidos", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text("Asignatura: Lenguaje y Comunicación", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
+                    Text("Gestión de Contenidos y Evaluaciones", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("Asignatura: Lenguaje y Comunicación (3° Básico)", color = Color.White.copy(alpha = 0.8f), fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Total: ${listaLecciones.size}", color = Color.White, fontSize = 12.sp)
+                        Text("Total Lecciones: ${listaLecciones.size}", color = Color.White, fontSize = 12.sp)
                         Text("En revisión UTP: 1", color = Color.White, fontSize = 12.sp)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            Text("Lecciones del Curso", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
-            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Lecciones del Curso", fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
+                TextButton(onClick = { mostrarInforme = true }) {
+                    Text("Ver Reporte Curso", color = Primario, fontWeight = FontWeight.Bold)
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -112,6 +126,9 @@ fun DocenteScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(leccion.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                                 Text(leccion.descripcion, fontSize = 12.sp, color = Color.Gray)
+                                leccion.objetivoRelacionado?.let {
+                                    Text("OA: ${it.codigoOficial} - ${it.ejeCurricular}", fontSize = 10.sp, color = Primario, fontWeight = FontWeight.Medium)
+                                }
                             }
                             IconButton(onClick = { }) {
                                 Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color.Gray)
@@ -122,12 +139,76 @@ fun DocenteScreen(
             }
         }
 
+        // Modal para crear lección con asignación de OA e Intentos
         if (mostrarModalCrear) {
             CrearLeccionDialog(
                 onDismiss = { mostrarModalCrear = false },
                 onGuardar = { nuevaLeccion ->
                     listaLecciones.add(nuevaLeccion)
                     mostrarModalCrear = false
+                }
+            )
+        }
+
+        if (mostrarInforme) {
+            AlertDialog(
+                onDismissRequest = { mostrarInforme = false },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Analytics, contentDescription = null, tint = Primario)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Informe Pedagógico", fontWeight = FontWeight.Bold)
+                    }
+                },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Rendimiento del Curso (Tercero Básico A)", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                        Text("• Promedio General: 85% de logro", fontSize = 13.sp)
+                        Text("• Fortalezas: Comprensión de textos breves y vocales.", fontSize = 13.sp, color = Color(0xFF2E7D32))
+                        Text("• Aspectos a Reforzar: Fluidez en lectura de oraciones cortas.", fontSize = 13.sp, color = Color(0xFFC62828))
+
+                        Divider(color = Color.LightGray)
+
+                        if (informeValidado) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Informe Validado Profesionalmente", fontSize = 12.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            Text("Estado: Pendiente de validación docente", fontSize = 12.sp, color = Color.Gray)
+                        }
+
+                        if (mensajeDescarga) {
+                            Text("📄 Informe guardado en Descargas (PDF)", fontSize = 12.sp, color = Primario, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                },
+                confirmButton = {
+                    Row {
+                        if (!informeValidado) {
+                            Button(
+                                onClick = { informeValidado = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                            ) {
+                                Text("Validar Informe")
+                            }
+                        } else {
+                            Button(
+                                onClick = { mensajeDescarga = true },
+                                colors = ButtonDefaults.buttonColors(containerColor = Primario)
+                            ) {
+                                Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Descargar PDF")
+                            }
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { mostrarInforme = false }) {
+                        Text("Cerrar")
+                    }
                 }
             )
         }
@@ -141,6 +222,7 @@ fun CrearLeccionDialog(
 ) {
     var titulo by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
+    var intentos by remember { mutableStateOf("3") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -160,6 +242,13 @@ fun CrearLeccionDialog(
                     label = { Text("Descripción / Instrucciones") },
                     modifier = Modifier.fillMaxWidth()
                 )
+                OutlinedTextField(
+                    value = intentos,
+                    onValueChange = { intentos = it },
+                    label = { Text("Intentos Permitidos en Prueba Final") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
@@ -171,7 +260,8 @@ fun CrearLeccionDialog(
                                 numero = (6..99).random(),
                                 titulo = titulo,
                                 estado = EstadoLeccion.EN_CURSO,
-                                descripcion = descripcion.ifBlank { "Contenido enviado a UTP para revisión." }
+                                objetivoRelacionado = ObjetivoAprendizaje("OA_GEN", "OA01", "Lenguaje", 1, "Lectura", "Objetivo oficial de lectura."),
+                                descripcion = descripcion.ifBlank { "Contenido con $intentos intentos permitidos." }
                             )
                         )
                     }
