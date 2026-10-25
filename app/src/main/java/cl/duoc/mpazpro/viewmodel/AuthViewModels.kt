@@ -7,15 +7,13 @@ import cl.duoc.mpazpro.campoValidado
 import cl.duoc.mpazpro.data.UsuarioRepositorio
 import cl.duoc.mpazpro.domain.Validaciones
 import cl.duoc.mpazpro.revisado
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-// --- LOGIN ---
 data class LoginUiState(
     val correo: Campo = Campo(),
     val clave: Campo = Campo(),
@@ -49,7 +47,8 @@ class LoginViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
 
         _ui.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            val ok = withContext(Dispatchers.Default) { repo.iniciarSesion(s.correo.valor, s.clave.valor) }
+            // Llamamos a la función suspendida del repositorio MVP
+            val ok = repo.iniciarSesion(s.correo.valor, s.clave.valor)
             _ui.update {
                 if (ok) it.copy(cargando = false, ingreso = true)
                 else it.copy(cargando = false, error = "Correo o contraseña incorrectos")
@@ -58,7 +57,6 @@ class LoginViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
     }
 }
 
-// --- REGISTRO ---
 data class RegistroUiState(
     val nombre: Campo = Campo(),
     val apellido: Campo = Campo(),
@@ -87,7 +85,6 @@ class RegistroViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
 
     fun onClave(v: String) {
         _ui.update {
-            // Si "repetir" ya tiene texto, hay que volver a compararlo con la nueva contraseña.
             val repetir = if (it.repetir.valor.isEmpty()) it.repetir
             else campoValidado(it.repetir.valor, Validaciones.repetir(v, it.repetir.valor))
             it.copy(clave = campoValidado(v, Validaciones.clave(v)), repetir = repetir)
@@ -121,21 +118,12 @@ class RegistroViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
 
         _ui.update { it.copy(cargando = true) }
         viewModelScope.launch {
-            val ok = withContext(Dispatchers.Default) {
-                repo.registrar(s.nombre.valor, s.apellido.valor, s.correo.valor, s.clave.valor)
-            }
-            _ui.update {
-                if (ok) it.copy(cargando = false, registrado = true)
-                else it.copy(
-                    cargando = false,
-                    correo = it.correo.copy(error = "Ya existe una cuenta con este correo", valido = false)
-                )
-            }
+            delay(1000) // Simulamos carga de red para el MVP
+            _ui.update { it.copy(cargando = false, registrado = true) }
         }
     }
 }
 
-// --- RECUPERAR CONTRASEÑA ---
 data class RecuperarUiState(
     val correo: Campo = Campo(),
     val nueva: Campo = Campo(),
@@ -183,14 +171,8 @@ class RecuperarViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
 
         _ui.update { it.copy(cargando = true) }
         viewModelScope.launch {
-            val ok = withContext(Dispatchers.Default) { repo.cambiarClave(s.correo.valor, s.nueva.valor) }
-            _ui.update {
-                if (ok) it.copy(cargando = false, exito = true)
-                else it.copy(
-                    cargando = false,
-                    correo = it.correo.copy(error = "No existe una cuenta con este correo", valido = false)
-                )
-            }
+            delay(1000) // Simulamos proceso en MVP
+            _ui.update { it.copy(cargando = false, exito = true) }
         }
     }
 }

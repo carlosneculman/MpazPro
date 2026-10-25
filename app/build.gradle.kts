@@ -39,6 +39,7 @@ android {
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.lifecycle.runtime.compose)
