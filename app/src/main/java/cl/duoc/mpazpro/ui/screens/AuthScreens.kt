@@ -23,16 +23,37 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.duoc.mpazpro.ui.components.*
 import cl.duoc.mpazpro.ui.theme.Primario
 import cl.duoc.mpazpro.viewmodel.*
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import cl.duoc.mpazpro.R
+
 
 @Composable
 fun BienvenidaScreen(nav: () -> Unit) {
-    Box(Modifier.fillMaxSize().background(Color(0xFFF4F6F9))) {
-        Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Spacer(Modifier.weight(1f))
-            Box(Modifier.size(140.dp).clip(CircleShape).background(Primario), Alignment.Center) {
-                Icon(Icons.Default.School, null, Modifier.size(70.dp), tint = Color.White)
-            }
-            Spacer(Modifier.height(32.dp))
+    val scrollState = rememberScrollState()
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF4F6F9))
+    ) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(Modifier.height(24.dp))
+
+            Image(
+                painter = painterResource(id = R.drawable.logo),
+                contentDescription = "Logo Escuela Marcela Paz",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape)
+            )
+
+            Spacer(Modifier.height(24.dp))
             Text("Escuela Especial", fontSize = 18.sp, color = Color.Gray)
             Text("Marcela Paz", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Primario)
             Spacer(Modifier.height(16.dp))
@@ -43,24 +64,33 @@ fun BienvenidaScreen(nav: () -> Unit) {
                     Box(Modifier.size(12.dp).clip(CircleShape).background(c))
                 }
             }
-            Spacer(Modifier.weight(1f))
-            BotonPrincipal("Comenzar", nav)
             Spacer(Modifier.height(32.dp))
+            BotonPrincipal("Comenzar", nav)
+            Spacer(Modifier.height(24.dp))
         }
     }
 }
 
 @Composable
-fun LoginScreen(ok: () -> Unit, rec: () -> Unit, reg: () -> Unit, vm: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun LoginScreen(
+    ok: () -> Unit,
+    rec: () -> Unit,
+    reg: () -> Unit,
+    vm: LoginViewModel = viewModel(factory = AppViewModelProvider.Factory)
+) {
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
     LaunchedEffect(ui.ingreso) { if (ui.ingreso) ok() }
 
     Box(Modifier.fillMaxSize().background(Color.White)) {
         Column(
-            Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(Modifier.height(40.dp))
+            Spacer(Modifier.height(24.dp))
             Box(Modifier.size(80.dp).clip(CircleShape).background(Primario), Alignment.Center) {
                 Icon(Icons.Default.School, null, Modifier.size(40.dp), tint = Color.White)
             }
@@ -86,30 +116,55 @@ fun LoginScreen(ok: () -> Unit, rec: () -> Unit, reg: () -> Unit, vm: LoginViewM
 }
 
 @Composable
-fun RegistroScreen(vol: () -> Unit, ok: () -> Unit, vm: RegistroViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun RegistroScreen(
+    vol: () -> Unit,
+    ok: () -> Unit,
+    vm: RegistroViewModel = viewModel(factory = AppViewModelProvider.Factory)
+) {
     val ui by vm.ui.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
     LaunchedEffect(ui.registrado) { if (ui.registrado) ok() }
 
     ContenidoCentrado {
-        IconButton(onClick = vol, modifier = Modifier.offset(x = (-12).dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-        Text("Crear cuenta", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        Spacer(Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            IconButton(
+                onClick = vol,
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .offset(x = (-12).dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+            }
+            Text("Crear cuenta", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Spacer(Modifier.height(16.dp))
 
-        CampoTexto(ui.nombre, vm::onNombre, "Nombre", Icons.Default.Person)
-        CampoTexto(ui.apellido, vm::onApellido, "Apellido", Icons.Default.Person)
-        CampoTexto(ui.correo, vm::onCorreo, "Correo", Icons.Default.Email, tipo = KeyboardType.Email)
-        CampoTexto(ui.clave, vm::onClave, "Contraseña", Icons.Default.Lock, true)
-        CampoTexto(ui.repetir, vm::onRepetir, "Repetir contraseña", Icons.Default.Lock, true)
+            CampoTexto(ui.nombre, vm::onNombre, "Nombre", Icons.Default.Person)
+            CampoTexto(ui.apellido, vm::onApellido, "Apellido", Icons.Default.Person)
+            CampoTexto(ui.correo, vm::onCorreo, "Correo", Icons.Default.Email, tipo = KeyboardType.Email)
+            CampoTexto(ui.clave, vm::onClave, "Contraseña", Icons.Default.Lock, true)
+            CampoTexto(ui.repetir, vm::onRepetir, "Repetir contraseña", Icons.Default.Lock, true)
 
-        Spacer(Modifier.height(16.dp))
-        BotonPrincipal(if (ui.cargando) "Creando cuenta…" else "Crear cuenta", vm::registrar, !ui.cargando)
+            Spacer(Modifier.height(24.dp))
+            BotonPrincipal(if (ui.cargando) "Creando cuenta…" else "Crear cuenta", vm::registrar, !ui.cargando)
+            Spacer(Modifier.height(16.dp))
+        }
     }
 }
 
 @Composable
-fun RecuperarScreen(vol: () -> Unit, vm: RecuperarViewModel = viewModel(factory = AppViewModelProvider.Factory)) {
+fun RecuperarScreen(
+    vol: () -> Unit,
+    vm: RecuperarViewModel = viewModel(factory = AppViewModelProvider.Factory)
+) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
+    val scrollState = rememberScrollState()
+
     LaunchedEffect(ui.exito) {
         if (ui.exito) {
             Toast.makeText(contexto, "Contraseña actualizada", Toast.LENGTH_SHORT).show()
@@ -118,17 +173,31 @@ fun RecuperarScreen(vol: () -> Unit, vm: RecuperarViewModel = viewModel(factory 
     }
 
     ContenidoCentrado {
-        IconButton(onClick = vol, modifier = Modifier.offset(x = (-12).dp)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-        Text("Cambiar contraseña", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-        Text("Te ayudamos a recuperar tu acceso", fontSize = 14.sp, color = Color.Gray)
-        Spacer(Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            IconButton(
+                onClick = vol,
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .offset(x = (-12).dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
+            }
+            Text("Cambiar contraseña", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("Te ayudamos a recuperar tu acceso", fontSize = 14.sp, color = Color.Gray)
+            Spacer(Modifier.height(16.dp))
 
-        CampoTexto(ui.correo, vm::onCorreo, "Correo", Icons.Default.Email, tipo = KeyboardType.Email)
-        CampoTexto(ui.nueva, vm::onNueva, "Nueva contraseña", Icons.Default.Lock, true)
-        CampoTexto(ui.repetir, vm::onRepetir, "Repetir nueva contraseña", Icons.Default.Lock, true)
+            CampoTexto(ui.correo, vm::onCorreo, "Correo", Icons.Default.Email, tipo = KeyboardType.Email)
+            CampoTexto(ui.nueva, vm::onNueva, "Nueva contraseña", Icons.Default.Lock, true)
+            CampoTexto(ui.repetir, vm::onRepetir, "Repetir nueva contraseña", Icons.Default.Lock, true)
 
-        Spacer(Modifier.height(32.dp))
-        BotonPrincipal("Confirmar", vm::confirmar, !ui.cargando)
+            Spacer(Modifier.height(24.dp))
+            BotonPrincipal("Confirmar", vm::confirmar, !ui.cargando)
+            Spacer(Modifier.height(16.dp))
+        }
     }
 }
-

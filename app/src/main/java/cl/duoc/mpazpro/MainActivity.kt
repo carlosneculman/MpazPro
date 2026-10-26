@@ -18,8 +18,6 @@ import cl.duoc.mpazpro.ui.theme.MpazProTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Fondo blanco fijo -> iconos de barras de estado/navegación siempre oscuros
-        // (con el modo oscuro del sistema quedaban blancos sobre blanco).
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.light(ColorAndroid.TRANSPARENT, ColorAndroid.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.light(ColorAndroid.TRANSPARENT, ColorAndroid.TRANSPARENT)
