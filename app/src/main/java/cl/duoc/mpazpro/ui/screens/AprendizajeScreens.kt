@@ -99,7 +99,7 @@ fun InicioScreen(
                             Spacer(Modifier.height(8.dp))
                             BarraProgreso(pct / 100f, Color.White)
                             Spacer(Modifier.height(6.dp))
-                            Text("\$pct% completado", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("$pct% completado", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -208,7 +208,15 @@ fun LeccionScreen(
     var reproduciendoAudio by rememberSaveable { mutableStateOf(false) }
     var respuestaSeleccionada by rememberSaveable { mutableStateOf<Int?>(null) }
     var mostrarFeedback by rememberSaveable { mutableStateOf(false) }
+    var intentosRestantes by rememberSaveable { mutableIntStateOf(3) }
     val scrollState = rememberScrollState()
+
+    // Valida la respuesta usando tu objeto Validaciones de la capa domain
+    val esCorrecta = respuestaSeleccionada != null &&
+            Validaciones.esRespuestaCorrecta(
+                seleccion = if (respuestaSeleccionada == 1) "Opción A" else "Opción B",
+                respuestaCorrecta = "Opción A"
+            )
 
     Scaffold(
         topBar = {
@@ -267,7 +275,11 @@ fun LeccionScreen(
 
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             OutlinedButton(
-                                onClick = { respuestaSeleccionada = 1; mostrarFeedback = true },
+                                onClick = {
+                                    respuestaSeleccionada = 1
+                                    mostrarFeedback = true
+                                },
+                                enabled = !mostrarFeedback || esCorrecta,
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     containerColor = if (respuestaSeleccionada == 1) Color(0xFFE8F5E9) else Color.White
@@ -275,7 +287,12 @@ fun LeccionScreen(
                             ) { Text("Opción A", fontSize = 14.sp) }
 
                             OutlinedButton(
-                                onClick = { respuestaSeleccionada = 2; mostrarFeedback = true },
+                                onClick = {
+                                    respuestaSeleccionada = 2
+                                    mostrarFeedback = true
+                                    if (intentosRestantes > 0) intentosRestantes -= 1
+                                },
+                                enabled = !mostrarFeedback,
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     containerColor = if (respuestaSeleccionada == 2) Color(0xFFFFEBEE) else Color.White
@@ -285,17 +302,46 @@ fun LeccionScreen(
 
                         if (mostrarFeedback) {
                             Spacer(modifier = Modifier.height(12.dp))
-                            if (respuestaSeleccionada == 1) {
+                            if (esCorrecta) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32))
                                     Spacer(modifier = Modifier.width(6.dp))
-                                    Text("¡Correcto! Respuesta acertada en el intento 1 de 3.", fontSize = 13.sp, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                    Text(
+                                        text = "¡Correcto! Respuesta acertada en el intento ${4 - intentosRestantes} de 3.",
+                                        fontSize = 13.sp,
+                                        color = Color(0xFF2E7D32),
+                                        fontWeight = FontWeight.Bold
+                                    )
                                 }
                             } else {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.Cancel, contentDescription = null, tint = Color(0xFFC62828))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text("Incorrecto. Intenta de nuevo (Quedan 2 intentos).", fontSize = 13.sp, color = Color(0xFFC62828), fontWeight = FontWeight.Bold)
+                                Column {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(Icons.Default.Cancel, contentDescription = null, tint = Color(0xFFC62828))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = if (intentosRestantes > 0)
+                                                "Incorrecto. Quedan $intentosRestantes intentos."
+                                            else
+                                                "Sin intentos disponibles. Presiona 'De nuevo' para reiniciar.",
+                                            fontSize = 13.sp,
+                                            color = Color(0xFFC62828),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(10.dp))
+                                    Button(
+                                        onClick = {
+                                            respuestaSeleccionada = null
+                                            mostrarFeedback = false
+                                            if (intentosRestantes == 0) intentosRestantes = 3
+                                        },
+                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+                                        shape = RoundedCornerShape(10.dp)
+                                    ) {
+                                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text("Intentar de nuevo", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                    }
                                 }
                             }
                         }
@@ -304,18 +350,28 @@ fun LeccionScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Botón bloqueado hasta que esCorrecta sea true
                 Button(
                     onClick = {
                         Contenido.marcarComoCompletada(materia, leccion.numero)
                         navAtras()
                     },
+                    enabled = esCorrecta,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primario),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primario,
+                        disabledContainerColor = Color.LightGray
+                    ),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Marcar como Completada", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = "Marcar como Completada",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (esCorrecta) Color.White else Color.DarkGray
+                    )
                 }
             }
         } else {

@@ -24,6 +24,7 @@ object Validaciones {
         valor.isEmpty() -> "Ingresa una contraseña"
         valor.length < CLAVE_MIN -> "Mínimo $CLAVE_MIN caracteres"
         else -> null
+
     }
 
     fun repetir(clave: String, repetida: String): String? = when {
@@ -34,4 +35,9 @@ object Validaciones {
 
     fun requerido(valor: String, mensaje: String): String? =
         if (valor.isBlank()) mensaje else null
+
+    // Valida si la alternativa seleccionada por el estudiante coincide con la respuesta correcta
+    fun esRespuestaCorrecta(seleccion: String, respuestaCorrecta: String): Boolean =
+        seleccion.trim().equals(respuestaCorrecta.trim(), ignoreCase = true)
 }
+

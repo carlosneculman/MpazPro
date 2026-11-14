@@ -3,8 +3,8 @@ package cl.duoc.mpazpro.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.duoc.mpazpro.Campo
-import cl.duoc.mpazpro.domain.Usuario
 import cl.duoc.mpazpro.data.UsuarioRepositorio
+import cl.duoc.mpazpro.domain.Usuario
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +18,7 @@ data class PerfilFormUiState(
     val curso: Campo = Campo(),
     val guardado: Boolean = false
 )
+
 data class UsuarioUiState(
     val nombre: String = "",
     val rol: String = "",
@@ -28,18 +29,28 @@ data class UsuarioUiState(
     val recordatorios: Boolean = false
 )
 
-private fun Usuario?.aUi() = if (this == null) UsuarioUiState() else UsuarioUiState(
-    nombre = this.nombre,
-    rol = this.rol.name,
-    correo = "contacto@mpaz.cl"
-)
+private fun Usuario?.aUi(fotoRespaldo: String? = null) = if (this == null) {
+    UsuarioUiState(fotoPath = fotoRespaldo)
+} else {
+    UsuarioUiState(
+        nombre = this.nombre,
+        rol = this.rol.name,
+        correo = "contacto@mpaz.cl",
+        fotoPath = this.fotoPath ?: fotoRespaldo
+    )
+}
 
 class PerfilViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
     private val _form = MutableStateFlow(PerfilFormUiState())
     val form: StateFlow<PerfilFormUiState> = _form.asStateFlow()
+
     val usuario: StateFlow<UsuarioUiState> = repo.usuario
-        .map { it.aUi() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), repo.usuario.value.aUi())
+        .map { it.aUi(repo.obtenerRutaFotoPerfil()) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            repo.usuario.value.aUi(repo.obtenerRutaFotoPerfil())
+        )
 
     fun onRol(v: String) {
         _form.update { it.copy(rol = Campo(v, valido = true)) }
@@ -50,6 +61,7 @@ class PerfilViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
     }
 
     fun onFoto(ruta: String) {
+        repo.guardarRutaFotoPerfil(ruta)
     }
 
     fun guardar() {

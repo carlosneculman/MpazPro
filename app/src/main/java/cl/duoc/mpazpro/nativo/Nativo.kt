@@ -50,7 +50,6 @@ fun rememberCamara(onFoto: (String) -> Unit): () -> Unit {
         }
     }
 }
-
 /**
  * Devuelve una función que pide el permiso de notificaciones (Android 13+) y avisa el resultado
  * con [onResultado]. En versiones anteriores no hay diálogo: solo se consulta si las
