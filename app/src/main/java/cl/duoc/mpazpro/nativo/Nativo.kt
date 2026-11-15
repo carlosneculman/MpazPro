@@ -3,6 +3,7 @@ package cl.duoc.mpazpro.nativo
 import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,6 +18,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import java.io.File
+import java.io.FileOutputStream
 
 /**
  * Devuelve una función que abre la cámara del sistema. Al aceptar la foto se llama a
@@ -50,6 +52,48 @@ fun rememberCamara(onFoto: (String) -> Unit): () -> Unit {
         }
     }
 }
+
+/**
+ * Devuelve una función que abre la galería del sistema. Al elegir una imagen, la copia
+ * al almacenamiento privado de la app y llama a [onFoto] con la ruta real del archivo JPG.
+ */
+@Composable
+fun rememberGaleria(onFoto: (String) -> Unit): () -> Unit {
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val carpeta = File(context.filesDir, "fotos").apply { mkdirs() }
+                val archivo = File(carpeta, "galeria_${System.currentTimeMillis()}.jpg")
+
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    FileOutputStream(archivo).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                if (archivo.exists() && archivo.length() > 0L) {
+                    onFoto(archivo.absolutePath)
+                } else {
+                    archivo.delete()
+                    Toast.makeText(context, "No se pudo cargar la imagen seleccionada", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error al importar la imagen de la galería", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    return {
+        try {
+            launcher.launch("image/*")
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(context, "No se encontró una aplicación de galería", Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
 /**
  * Devuelve una función que pide el permiso de notificaciones (Android 13+) y avisa el resultado
  * con [onResultado]. En versiones anteriores no hay diálogo: solo se consulta si las
@@ -69,7 +113,7 @@ fun rememberPermisoNotificaciones(onResultado: (Boolean) -> Unit): () -> Unit {
                 onResultado(NotificationManagerCompat.from(context).areNotificationsEnabled())
 
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED -> onResultado(true)
+                    PackageManager.PERMISSION_GRANTED -> onResultado(true)
 
             else -> launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
