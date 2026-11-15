@@ -1,5 +1,7 @@
 package cl.duoc.mpazpro.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import cl.duoc.mpazpro.domain.*
+import cl.duoc.mpazpro.nativo.rememberReproductorAudio
 import cl.duoc.mpazpro.ui.components.*
 import cl.duoc.mpazpro.ui.theme.*
 
@@ -33,15 +36,27 @@ fun InicioScreen(
     Scaffold(
         bottomBar = {
             NavigationBar(containerColor = Color.White) {
-                NavigationBarItem(selected = true, onClick = {},
+                NavigationBarItem(
+                    selected = true,
+                    onClick = {},
                     icon = { Icon(Icons.Default.Home, null, Modifier.size(28.dp)) },
                     label = { Text("Inicio", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Primario,
-                        selectedTextColor = Primario, indicatorColor = Color(0xFFE8EAF6)))
-                NavigationBarItem(selected = false, onClick = navP,
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = Primario,
+                        selectedTextColor = Primario,
+                        indicatorColor = Color(0xFFE8EAF6)
+                    )
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = navP,
                     icon = { Icon(Icons.Default.Person, null, Modifier.size(28.dp)) },
                     label = { Text("Perfil", fontSize = 14.sp) },
-                    colors = NavigationBarItemDefaults.colors(unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray))
+                    colors = NavigationBarItemDefaults.colors(
+                        unselectedIconColor = Color.Gray,
+                        unselectedTextColor = Color.Gray
+                    )
+                )
             }
         }
     ) { p ->
@@ -91,7 +106,13 @@ fun InicioScreen(
                             .padding(16.dp)
                     ) {
                         Column(Modifier.fillMaxSize()) {
-                            Box(Modifier.size(44.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.25f)), Alignment.Center) {
+                            Box(
+                                Modifier
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color.White.copy(alpha = 0.25f)),
+                                Alignment.Center
+                            ) {
                                 Icon(m.icono(), null, tint = Color.White, modifier = Modifier.size(24.dp))
                             }
                             Spacer(Modifier.weight(1f))
@@ -205,13 +226,10 @@ fun LeccionScreen(
     val lecciones = Contenido.lecciones(materia)
     val leccion = lecciones.find { it.numero.toString() == idLeccion }
 
-    var reproduciendoAudio by rememberSaveable { mutableStateOf(false) }
     var respuestaSeleccionada by rememberSaveable { mutableStateOf<Int?>(null) }
     var mostrarFeedback by rememberSaveable { mutableStateOf(false) }
-    var intentosRestantes by rememberSaveable { mutableIntStateOf(3) }
     val scrollState = rememberScrollState()
 
-    // Valida la respuesta usando tu objeto Validaciones de la capa domain
     val esCorrecta = respuestaSeleccionada != null &&
             Validaciones.esRespuestaCorrecta(
                 seleccion = if (respuestaSeleccionada == 1) "Opción A" else "Opción B",
@@ -231,6 +249,8 @@ fun LeccionScreen(
         }
     ) { padding ->
         if (leccion != null) {
+            val claveAudioLeccion = "${materia.name}_${leccion.numero}"
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -240,17 +260,13 @@ fun LeccionScreen(
                     .padding(20.dp)
             ) {
                 Text(text = leccion.titulo, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Button(
-                    onClick = { reproduciendoAudio = !reproduciendoAudio },
-                    colors = ButtonDefaults.buttonColors(containerColor = if (reproduciendoAudio) Color(0xFF2E7D32) else Primario),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(if (reproduciendoAudio) Icons.Default.VolumeUp else Icons.Default.VolumeMute, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(if (reproduciendoAudio) "Reproduciendo audio..." else "Escuchar instrucción con audio", fontSize = 14.sp)
-                }
+                // Reproductor conectado al audio que el profesor haya subido para esta materia y lección
+                TarjetaReproductorAudio(
+                    titulo = "Audio explicativo: ${leccion.titulo}",
+                    claveLeccion = claveAudioLeccion
+                )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -290,7 +306,6 @@ fun LeccionScreen(
                                 onClick = {
                                     respuestaSeleccionada = 2
                                     mostrarFeedback = true
-                                    if (intentosRestantes > 0) intentosRestantes -= 1
                                 },
                                 enabled = !mostrarFeedback,
                                 modifier = Modifier.weight(1f),
@@ -300,47 +315,44 @@ fun LeccionScreen(
                             ) { Text("Opción B", fontSize = 14.sp) }
                         }
 
-                        if (mostrarFeedback) {
-                            Spacer(modifier = Modifier.height(12.dp))
-                            if (esCorrecta) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32))
-                                    Spacer(modifier = Modifier.width(6.dp))
-                                    Text(
-                                        text = "¡Correcto! Respuesta acertada en el intento ${4 - intentosRestantes} de 3.",
-                                        fontSize = 13.sp,
-                                        color = Color(0xFF2E7D32),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            } else {
-                                Column {
+                        AnimatedVisibility(visible = mostrarFeedback) {
+                            Column(modifier = Modifier.padding(top = 12.dp)) {
+                                if (esCorrecta) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Cancel, contentDescription = null, tint = Color(0xFFC62828))
+                                        Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF2E7D32))
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
-                                            text = if (intentosRestantes > 0)
-                                                "Incorrecto. Quedan $intentosRestantes intentos."
-                                            else
-                                                "Sin intentos disponibles. Presiona 'De nuevo' para reiniciar.",
+                                            text = "¡Correcto! Respuesta acertada.",
                                             fontSize = 13.sp,
-                                            color = Color(0xFFC62828),
+                                            color = Color(0xFF2E7D32),
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                    Button(
-                                        onClick = {
-                                            respuestaSeleccionada = null
-                                            mostrarFeedback = false
-                                            if (intentosRestantes == 0) intentosRestantes = 3
-                                        },
-                                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
-                                        shape = RoundedCornerShape(10.dp)
-                                    ) {
-                                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text("Intentar de nuevo", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                } else {
+                                    Column {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(Icons.Default.Cancel, contentDescription = null, tint = Color(0xFFC62828))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = "Respuesta incorrecta. Puedes intentarlo nuevamente.",
+                                                fontSize = 13.sp,
+                                                color = Color(0xFFC62828),
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        Button(
+                                            onClick = {
+                                                respuestaSeleccionada = null
+                                                mostrarFeedback = false
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC62828)),
+                                            shape = RoundedCornerShape(10.dp)
+                                        ) {
+                                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text("Intentar de nuevo", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                        }
                                     }
                                 }
                             }
@@ -350,7 +362,6 @@ fun LeccionScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Botón bloqueado hasta que esCorrecta sea true
                 Button(
                     onClick = {
                         Contenido.marcarComoCompletada(materia, leccion.numero)
@@ -380,4 +391,128 @@ fun LeccionScreen(
             }
         }
     }
+}
+
+@Composable
+fun TarjetaReproductorAudio(
+    titulo: String,
+    claveLeccion: String = "general",
+    rutaPersonalizada: String? = null,
+    modifier: Modifier = Modifier
+) {
+    val audio = rememberReproductorAudio(
+        claveLeccion = claveLeccion,
+        rutaPersonalizada = rutaPersonalizada
+    )
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F4FF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = if (audio.reproduciendo) Icons.Default.VolumeUp else Icons.Default.VolumeMute,
+                    contentDescription = null,
+                    tint = Primario
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text = titulo,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+                    Text(
+                        text = if (audio.tieneAudioDocente) "Audio personalizado del docente" else "Audio demostrativo de la lección",
+                        fontSize = 12.sp,
+                        color = if (audio.tieneAudioDocente) Color(0xFF2E7D32) else Color.Gray
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Slider(
+                value = audio.posicionMs.toFloat(),
+                onValueChange = { nuevoValor -> audio.buscarTiempo(nuevoValor.toInt()) },
+                valueRange = 0f..(audio.duracionMs.coerceAtLeast(1).toFloat()),
+                colors = SliderDefaults.colors(
+                    thumbColor = Primario,
+                    activeTrackColor = Primario
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(formatearTiempoMs(audio.posicionMs), fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                Text(formatearTiempoMs(audio.duracionMs), fontSize = 12.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = { audio.saltarSegundos(-5) },
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Primario),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text("-5s", color = Primario, fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = audio.alternarPlayPause,
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (audio.reproduciendo) Color(0xFF2E7D32) else Primario
+                    ),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                ) {
+                    Icon(
+                        imageVector = if (audio.reproduciendo) Icons.Default.Refresh else Icons.Default.PlayArrow,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = if (audio.reproduciendo) "Pausar" else "Escuchar",
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { audio.saltarSegundos(5) },
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Primario),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                ) {
+                    Text("+5s", color = Primario, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+private fun formatearTiempoMs(milisegundos: Int): String {
+    val totalSegundos = (milisegundos / 1000).coerceAtLeast(0)
+    val minutos = totalSegundos / 60
+    val segundos = totalSegundos % 60
+    return "%02d:%02d".format(minutos, segundos)
 }
