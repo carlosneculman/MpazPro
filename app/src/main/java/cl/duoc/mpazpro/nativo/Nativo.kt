@@ -1,6 +1,8 @@
 package cl.duoc.mpazpro.nativo
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.pm.PackageManager
@@ -20,15 +22,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import cl.duoc.mpazpro.R
 import kotlinx.coroutines.delay
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import kotlin.math.sin
+
+private const val CANAL_RECORDATORIOS_ID = "canal_recordatorios_mpaz"
+private const val NOTIFICACION_RECORDATORIO_ID = 1001
 
 /**
  * Devuelve una función que abre la cámara del sistema. Al aceptar la foto se llama a
@@ -103,8 +110,8 @@ fun rememberGaleria(onFoto: (String) -> Unit): () -> Unit {
 }
 
 /**
- * Abre el selector de archivos del teléfono (igual que la galería) para que el profesor elija
- * cualquier audio (MP3, WAV, M4A, OGG, etc.) de cualquier duración, guardándolo para la lección.
+ * Abre el selector de archivos del teléfono para que el profesor elija cualquier audio
+ * (MP3, WAV, M4A, OGG, etc.) de cualquier duración, guardándolo para la lección.
  */
 @Composable
 fun rememberSelectorAudio(
@@ -117,7 +124,6 @@ fun rememberSelectorAudio(
         if (uri != null) {
             try {
                 val carpeta = File(context.filesDir, "audios").apply { mkdirs() }
-                // Reemplaza el audio anterior de esta misma lección si existía
                 carpeta.listFiles()
                     ?.filter { it.name.startsWith("audio_${claveLeccion}_") }
                     ?.forEach { it.delete() }
@@ -163,28 +169,84 @@ fun obtenerRutaAudioGuardado(context: Context, claveLeccion: String): String? {
 }
 
 /**
- * Devuelve una función que pide el permiso de notificaciones (Android 13+) y avisa el resultado
- * con [onResultado].
+ * Pide el permiso de notificaciones (Android 13+), avisa el resultado con [onResultado]
+ * y lanza la notificación de recordatorio de estudio cuando queda habilitado.
  */
 @Composable
 fun rememberPermisoNotificaciones(onResultado: (Boolean) -> Unit): () -> Unit {
     val context = LocalContext.current
     val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-        onResultado
-    )
+        ActivityResultContracts.RequestPermission()
+    ) { concedido ->
+        onResultado(concedido)
+        if (concedido) {
+            mostrarNotificacionRecordatorio(context)
+        } else {
+            Toast.makeText(context, "Permiso de notificaciones denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     return {
         when {
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ->
-                onResultado(NotificationManagerCompat.from(context).areNotificationsEnabled())
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU -> {
+                val habilitadas = NotificationManagerCompat.from(context).areNotificationsEnabled()
+                onResultado(habilitadas)
+                if (habilitadas) {
+                    mostrarNotificacionRecordatorio(context)
+                }
+            }
 
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
-                    PackageManager.PERMISSION_GRANTED -> onResultado(true)
+                    PackageManager.PERMISSION_GRANTED -> {
+                onResultado(true)
+                mostrarNotificacionRecordatorio(context)
+            }
 
             else -> launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+}
+
+/**
+ * Crea el canal de notificaciones y muestra el recordatorio de estudio de la Escuela Marcela Paz.
+ */
+fun mostrarNotificacionRecordatorio(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val canal = NotificationChannel(
+            CANAL_RECORDATORIOS_ID,
+            "Recordatorios de Estudio",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Avisos para repasar las lecciones en Escuela Escritora Marcela Paz"
+        }
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.createNotificationChannel(canal)
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+    ) {
+        return
+    }
+
+    val notificacion = NotificationCompat.Builder(context, CANAL_RECORDATORIOS_ID)
+        .setSmallIcon(R.mipmap.ic_launcher)
+        .setContentTitle("Escuela Escritora Marcela Paz")
+        .setContentText("¡Recordatorio activado! Es un buen momento para avanzar en tus lecciones.")
+        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setAutoCancel(true)
+        .build()
+
+    NotificationManagerCompat.from(context).notify(NOTIFICACION_RECORDATORIO_ID, notificacion)
+    Toast.makeText(context, "Recordatorio de estudio activado", Toast.LENGTH_SHORT).show()
+}
+
+/**
+ * Cancela la notificación activa cuando el usuario apaga el interruptor de recordatorios.
+ */
+fun cancelarNotificacionRecordatorio(context: Context) {
+    NotificationManagerCompat.from(context).cancel(NOTIFICACION_RECORDATORIO_ID)
+    Toast.makeText(context, "Recordatorio de estudio desactivado", Toast.LENGTH_SHORT).show()
 }
 
 /**
@@ -201,9 +263,7 @@ class ControladorAudio(
 )
 
 /**
- * Inicializa un reproductor MediaPlayer nativo. Si el profesor subió un audio para [claveLeccion]
- * (o se pasa [rutaPersonalizada]), reproduce ese archivo con su duración exacta; de lo contrario,
- * reproduce un audio educativo local de respaldo.
+ * Inicializa un reproductor MediaPlayer nativo con soporte para el audio subido por el docente.
  */
 @Composable
 fun rememberReproductorAudio(
@@ -308,10 +368,6 @@ fun rememberReproductorAudio(
     )
 }
 
-/**
- * Genera un archivo WAV de 30 segundos en el almacenamiento interno si aún no se ha subido
- * un audio personalizado para la lección.
- */
 private fun obtenerAudioLocalDemo(context: Context): File {
     val archivo = File(context.cacheDir, "audio_leccion_demo.wav")
     if (archivo.exists() && archivo.length() > 1000L) return archivo

@@ -29,14 +29,23 @@ data class UsuarioUiState(
     val recordatorios: Boolean = false
 )
 
-private fun Usuario?.aUi(fotoRespaldo: String? = null) = if (this == null) {
-    UsuarioUiState(fotoPath = fotoRespaldo)
+private fun Usuario?.aUi(
+    fotoRespaldo: String? = null,
+    recordatoriosRespaldo: Boolean = false
+) = if (this == null) {
+    UsuarioUiState(
+        fotoPath = fotoRespaldo,
+        recordatorios = recordatoriosRespaldo
+    )
 } else {
     UsuarioUiState(
         nombre = this.nombre,
+        apellido = this.apellido,
         rol = this.rol.name,
-        correo = "contacto@mpaz.cl",
-        fotoPath = this.fotoPath ?: fotoRespaldo
+        correo = this.correo.ifBlank { "contacto@mpaz.cl" },
+        curso = this.curso ?: "3° Básico",
+        fotoPath = this.fotoPath ?: fotoRespaldo,
+        recordatorios = this.recordatorios
     )
 }
 
@@ -45,11 +54,11 @@ class PerfilViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
     val form: StateFlow<PerfilFormUiState> = _form.asStateFlow()
 
     val usuario: StateFlow<UsuarioUiState> = repo.usuario
-        .map { it.aUi(repo.obtenerRutaFotoPerfil()) }
+        .map { it.aUi(repo.obtenerRutaFotoPerfil(), repo.obtenerRecordatorios()) }
         .stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5_000),
-            repo.usuario.value.aUi(repo.obtenerRutaFotoPerfil())
+            repo.usuario.value.aUi(repo.obtenerRutaFotoPerfil(), repo.obtenerRecordatorios())
         )
 
     fun onRol(v: String) {
@@ -69,6 +78,7 @@ class PerfilViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
     }
 
     fun recordatorios(activo: Boolean) {
+        repo.guardarRecordatorios(activo)
     }
 
     fun cerrarSesion() = repo.cerrarSesion()

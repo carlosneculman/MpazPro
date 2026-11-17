@@ -18,14 +18,14 @@ class UsuarioRepositorio(private val context: Context) {
         context.applicationContext.getSharedPreferences("mpazpro_usuarios", Context.MODE_PRIVATE)
 
     private val usuariosFicticios = listOf(
-        Usuario(id = "1", nombre = "Paz Morales", rol = RolUsuario.UTP),
-        Usuario(id = "2", nombre = "Profesor Juan", rol = RolUsuario.DOCENTE),
-        Usuario(id = "3", nombre = "Estudiante Ana", rol = RolUsuario.ESTUDIANTE)
+        Usuario(id = "1", nombre = "Paz Morales", correo = "utp@mpaz.cl", rol = RolUsuario.UTP, curso = "3° Básico"),
+        Usuario(id = "2", nombre = "Profesor Juan", correo = "profesor@mpaz.cl", rol = RolUsuario.DOCENTE, curso = "3° Básico"),
+        Usuario(id = "3", nombre = "Estudiante Ana", correo = "estudiante@mpaz.cl", rol = RolUsuario.ESTUDIANTE, curso = "3° Básico")
     )
 
     private val credencialesFicticias = mapOf(
         "utp@mpaz.cl" to "1",
-        "docente@mpaz.cl" to "2",
+        "profesor@mpaz.cl" to "2",
         "estudiante@mpaz.cl" to "3"
     )
 
@@ -55,7 +55,11 @@ class UsuarioRepositorio(private val context: Context) {
         val idGuardado = prefs.getString(SESION, null)
         val usuarioBase = usuariosFicticios.find { it.id == idGuardado }
         val fotoGuardada = obtenerRutaFotoPerfil()
-        return usuarioBase?.copy(fotoPath = fotoGuardada)
+        val recordatoriosActivos = obtenerRecordatorios()
+        return usuarioBase?.copy(
+            fotoPath = fotoGuardada,
+            recordatorios = recordatoriosActivos
+        )
     }
 
     private fun normalizar(correo: String) = correo.trim().lowercase()
@@ -68,10 +72,18 @@ class UsuarioRepositorio(private val context: Context) {
         return prefs.getBoolean("PROGRESO_${materia}_$idLeccion", false)
     }
 
-    // Guarda la ruta entregada por el FileProvider de la cámara y actualiza el usuario activo
     fun guardarRutaFotoPerfil(ruta: String) {
         prefs.edit().putString(FOTO_PERFIL, ruta).apply()
         _usuario.value = _usuario.value?.copy(fotoPath = ruta)
+    }
+
+    fun guardarRecordatorios(activo: Boolean) {
+        prefs.edit().putBoolean(RECORDATORIOS, activo).apply()
+        _usuario.value = _usuario.value?.copy(recordatorios = activo)
+    }
+
+    fun obtenerRecordatorios(): Boolean {
+        return prefs.getBoolean(RECORDATORIOS, false)
     }
 
     fun guardarFotoEnDisco(bitmap: Bitmap): String? {
@@ -97,5 +109,6 @@ class UsuarioRepositorio(private val context: Context) {
     private companion object {
         const val SESION = "sesion_activa_id"
         const val FOTO_PERFIL = "ruta_foto_perfil"
+        const val RECORDATORIOS = "recordatorios_estudio_activos"
     }
 }

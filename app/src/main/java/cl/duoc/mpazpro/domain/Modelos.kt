@@ -32,7 +32,7 @@ data class Leccion(
     val objetivoRelacionado: ObjetivoAprendizaje? = null,
     val descripcion: String = "Módulo de aprendizaje interactivo con apoyo de audio.",
     val contenido: String = "Aquí irá el texto pedagógico y las instrucciones del docente.",
-    val audioResId: Int? = null // Soporte multimedia (recursos de audio res/raw)
+    val audioResId: Int? = null
 )
 
 data class ResultadoEvaluacion(
@@ -54,38 +54,41 @@ object Contenido {
         Materia.CIENCIAS to ObjetivoAprendizaje("OA1_C", "OA01", "Ciencias", 1, "Biología", "Identificar los órganos de los sentidos.")
     )
 
+    // Todas las materias inician en 0% con solo la Lección 1 desbloqueada (EN_CURSO)
     private val mapaLecciones: MutableMap<Materia, MutableList<Leccion>> = mutableMapOf(
         Materia.LENGUAJE to mutableListOf(
-            Leccion(1, "Las vocales", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.LENGUAJE]),
-            Leccion(2, "Las sílabas", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.LENGUAJE]),
-            Leccion(3, "Palabras simples", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.LENGUAJE]),
+            Leccion(1, "Las vocales", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.LENGUAJE]),
+            Leccion(2, "Las sílabas", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.LENGUAJE]),
+            Leccion(3, "Palabras simples", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.LENGUAJE]),
             Leccion(4, "Oraciones cortas", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.LENGUAJE]),
             Leccion(5, "Lectura corta", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.LENGUAJE])
         ),
         Materia.MATEMATICAS to mutableListOf(
-            Leccion(1, "Números hasta 100", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.MATEMATICAS]),
-            Leccion(2, "Sumas simples", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.MATEMATICAS]),
+            Leccion(1, "Números hasta 100", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.MATEMATICAS]),
+            Leccion(2, "Sumas simples", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.MATEMATICAS]),
             Leccion(3, "Restas simples", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.MATEMATICAS]),
             Leccion(4, "Figuras geométricas", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.MATEMATICAS]),
             Leccion(5, "Medir y comparar", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.MATEMATICAS])
         ),
         Materia.HISTORIA to mutableListOf(
-            Leccion(1, "Mi familia", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.HISTORIA]),
-            Leccion(2, "Mi escuela", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.HISTORIA]),
-            Leccion(3, "Mi comunidad", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.HISTORIA]),
-            Leccion(4, "Símbolos patrios", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.HISTORIA]),
+            Leccion(1, "Mi familia", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.HISTORIA]),
+            Leccion(2, "Mi escuela", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.HISTORIA]),
+            Leccion(3, "Mi comunidad", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.HISTORIA]),
+            Leccion(4, "Símbolos patrios", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.HISTORIA]),
             Leccion(5, "Pueblos originarios", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.HISTORIA])
         ),
         Materia.CIENCIAS to mutableListOf(
-            Leccion(1, "Seres vivos", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.CIENCIAS]),
-            Leccion(2, "Las plantas", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.CIENCIAS]),
-            Leccion(3, "Los animales", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.CIENCIAS]),
-            Leccion(4, "El agua", EstadoLeccion.COMPLETADA, oasEjemplo[Materia.CIENCIAS]),
-            Leccion(5, "El cuerpo humano", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.CIENCIAS])
+            Leccion(1, "Seres vivos", EstadoLeccion.EN_CURSO, oasEjemplo[Materia.CIENCIAS]),
+            Leccion(2, "Las plantas", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.CIENCIAS]),
+            Leccion(3, "Los animales", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.CIENCIAS]),
+            Leccion(4, "El agua", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.CIENCIAS]),
+            Leccion(5, "El cuerpo humano", EstadoLeccion.BLOQUEADA, oasEjemplo[Materia.CIENCIAS])
         )
     )
 
     fun lecciones(materia: Materia): List<Leccion> = mapaLecciones[materia] ?: emptyList()
+
+    fun objetivoPorMateria(materia: Materia): ObjetivoAprendizaje? = oasEjemplo[materia]
 
     fun marcarComoCompletada(materia: Materia, numeroLeccion: Int) {
         val lista = mapaLecciones[materia] ?: return
@@ -95,6 +98,16 @@ object Contenido {
             if (index + 1 < lista.size && lista[index + 1].estado == EstadoLeccion.BLOQUEADA) {
                 lista[index + 1] = lista[index + 1].copy(estado = EstadoLeccion.EN_CURSO)
             }
+        }
+    }
+
+    fun guardarLeccionDocente(materia: Materia, leccionEditada: Leccion) {
+        val lista = mapaLecciones[materia] ?: return
+        val index = lista.indexOfFirst { it.numero == leccionEditada.numero }
+        if (index != -1) {
+            lista[index] = leccionEditada
+        } else {
+            lista.add(leccionEditada)
         }
     }
 

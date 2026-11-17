@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -132,8 +133,11 @@ fun PerfilScreen(
     sal: () -> Unit,
     vm: PerfilViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+    val context = LocalContext.current
     val u by vm.usuario.collectAsStateWithLifecycle()
-    val noti = rememberPermisoNotificaciones { vm.recordatorios(it) }
+    val noti = rememberPermisoNotificaciones { concedido ->
+        vm.recordatorios(concedido)
+    }
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -182,9 +186,9 @@ fun PerfilScreen(
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 FilaDatoPerfil("Nombre", "${u.nombre} ${u.apellido}".trim())
                 HorizontalDivider(color = Color(0xFFEEEEEE))
-                FilaDatoPerfil("Rol", u.rol ?: "—")
+                FilaDatoPerfil("Rol", u.rol.ifBlank { "—" })
                 HorizontalDivider(color = Color(0xFFEEEEEE))
-                FilaDatoPerfil("Curso", u.curso ?: "—")
+                FilaDatoPerfil("Curso", u.curso.ifBlank { "—" })
                 HorizontalDivider(color = Color(0xFFEEEEEE))
                 FilaDatoPerfil("Correo", u.correo)
                 HorizontalDivider(color = Color(0xFFEEEEEE))
@@ -194,13 +198,25 @@ fun PerfilScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Notifications, null, tint = Color.Gray, modifier = Modifier.size(20.dp))
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = if (u.recordatorios) Primario else Color.Gray,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Spacer(Modifier.width(8.dp))
                         Text("Recordatorios de estudio", fontSize = 14.sp, color = Color.Gray)
                     }
                     Switch(
                         checked = u.recordatorios,
-                        onCheckedChange = { if (it) noti() else vm.recordatorios(false) },
+                        onCheckedChange = { activar ->
+                            if (activar) {
+                                noti()
+                            } else {
+                                vm.recordatorios(false)
+                                cancelarNotificacionRecordatorio(context)
+                            }
+                        },
                         colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Primario)
                     )
                 }
@@ -256,7 +272,6 @@ private fun SelectorFotoConPrevia(
             )
         }
 
-        // Vista previa con botones X (descartar) y Ticket (confirmar)
         AnimatedVisibility(visible = fotoTemporal != null) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -273,7 +288,6 @@ private fun SelectorFotoConPrevia(
                     horizontalArrangement = Arrangement.spacedBy(24.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Botón X: Descarta la foto temporal y permite volver a intentar
                     FilledIconButton(
                         onClick = {
                             fotoTemporal?.let { File(it).delete() }
@@ -289,7 +303,6 @@ private fun SelectorFotoConPrevia(
                         )
                     }
 
-                    // Botón Ticket: Confirma y guarda la foto definitivamente
                     FilledIconButton(
                         onClick = {
                             fotoTemporal?.let { rutaConfirmada ->
