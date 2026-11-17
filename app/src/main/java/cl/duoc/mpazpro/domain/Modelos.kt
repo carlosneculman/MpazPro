@@ -25,6 +25,20 @@ data class ObjetivoAprendizaje(
 
 enum class EstadoLeccion { COMPLETADA, EN_CURSO, BLOQUEADA }
 
+enum class EstadoRevisionUtp { PENDIENTE, APROBADA, CAMBIOS_SOLICITADOS }
+
+data class SolicitudUtp(
+    val id: String,
+    val materia: Materia,
+    val numeroLeccion: Int,
+    val titulo: String,
+    val docente: String,
+    val descripcion: String,
+    val estado: EstadoRevisionUtp = EstadoRevisionUtp.PENDIENTE
+) {
+    val claveAudio: String get() = "${materia.name}_$numeroLeccion"
+}
+
 data class Leccion(
     val numero: Int,
     val titulo: String,
@@ -86,6 +100,45 @@ object Contenido {
         )
     )
 
+    private val listaSolicitudesUtp: MutableList<SolicitudUtp> = mutableListOf(
+        SolicitudUtp(
+            id = "LENGUAJE_1",
+            materia = Materia.LENGUAJE,
+            numeroLeccion = 1,
+            titulo = "1. Las vocales",
+            docente = "Prof. Juan Pérez",
+            descripcion = "Módulo de aprendizaje interactivo con apoyo de audio.",
+            estado = EstadoRevisionUtp.PENDIENTE
+        ),
+        SolicitudUtp(
+            id = "MATEMATICAS_1",
+            materia = Materia.MATEMATICAS,
+            numeroLeccion = 1,
+            titulo = "Conteo del 1 al 20",
+            docente = "Prof. Carlos Ruiz",
+            descripcion = "Actividad interactiva con material concreto.",
+            estado = EstadoRevisionUtp.APROBADA
+        ),
+        SolicitudUtp(
+            id = "HISTORIA_1",
+            materia = Materia.HISTORIA,
+            numeroLeccion = 1,
+            titulo = "1. Mi familia",
+            docente = "Prof. Juan Pérez",
+            descripcion = "Reconocimiento del entorno familiar y símbolos patrios.",
+            estado = EstadoRevisionUtp.APROBADA
+        ),
+        SolicitudUtp(
+            id = "CIENCIAS_1",
+            materia = Materia.CIENCIAS,
+            numeroLeccion = 1,
+            titulo = "Los sentidos",
+            docente = "Prof. Ana Torres",
+            descripcion = "Ficha técnica y reconocimiento de texturas.",
+            estado = EstadoRevisionUtp.APROBADA
+        )
+    )
+
     fun lecciones(materia: Materia): List<Leccion> = mapaLecciones[materia] ?: emptyList()
 
     fun objetivoPorMateria(materia: Materia): ObjetivoAprendizaje? = oasEjemplo[materia]
@@ -108,6 +161,33 @@ object Contenido {
             lista[index] = leccionEditada
         } else {
             lista.add(leccionEditada)
+        }
+
+        // Sincroniza automáticamente la lección editada o creada con la bandeja de Jefatura UTP
+        val idSolicitud = "${materia.name}_${leccionEditada.numero}"
+        val solicitudActualizada = SolicitudUtp(
+            id = idSolicitud,
+            materia = materia,
+            numeroLeccion = leccionEditada.numero,
+            titulo = "${leccionEditada.numero}. ${leccionEditada.titulo}",
+            docente = "Prof. Juan Pérez",
+            descripcion = leccionEditada.descripcion,
+            estado = EstadoRevisionUtp.PENDIENTE
+        )
+        val idxUtp = listaSolicitudesUtp.indexOfFirst { it.id == idSolicitud }
+        if (idxUtp != -1) {
+            listaSolicitudesUtp[idxUtp] = solicitudActualizada
+        } else {
+            listaSolicitudesUtp.add(0, solicitudActualizada)
+        }
+    }
+
+    fun obtenerSolicitudesUtp(): List<SolicitudUtp> = listaSolicitudesUtp.toList()
+
+    fun actualizarEstadoSolicitudUtp(id: String, nuevoEstado: EstadoRevisionUtp) {
+        val idx = listaSolicitudesUtp.indexOfFirst { it.id == id }
+        if (idx != -1) {
+            listaSolicitudesUtp[idx] = listaSolicitudesUtp[idx].copy(estado = nuevoEstado)
         }
     }
 

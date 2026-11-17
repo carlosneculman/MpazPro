@@ -19,6 +19,7 @@ object AppViewModelProvider {
         initializer { RegistroViewModel(repositorio()) }
         initializer { RecuperarViewModel(repositorio()) }
         initializer { PerfilViewModel(repositorio()) }
+        initializer { AprendizajeViewModel(repositorio()) }
     }
 }
 
