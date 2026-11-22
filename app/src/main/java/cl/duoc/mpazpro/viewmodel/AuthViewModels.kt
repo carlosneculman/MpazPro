@@ -64,6 +64,7 @@ data class RegistroUiState(
     val clave: Campo = Campo(),
     val repetir: Campo = Campo(),
     val cargando: Boolean = false,
+    val error: String? = null,
     val registrado: Boolean = false
 )
 
@@ -80,14 +81,14 @@ class RegistroViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
     }
 
     fun onCorreo(v: String) {
-        _ui.update { it.copy(correo = campoValidado(v, Validaciones.correo(v))) }
+        _ui.update { it.copy(correo = campoValidado(v, Validaciones.correo(v)), error = null) }
     }
 
     fun onClave(v: String) {
         _ui.update {
             val repetir = if (it.repetir.valor.isEmpty()) it.repetir
             else campoValidado(it.repetir.valor, Validaciones.repetir(v, it.repetir.valor))
-            it.copy(clave = campoValidado(v, Validaciones.clave(v)), repetir = repetir)
+            it.copy(clave = campoValidado(v, Validaciones.clave(v)), repetir = repetir, error = null)
         }
     }
 
@@ -116,10 +117,18 @@ class RegistroViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
         }
         if (listOf(eNombre, eApellido, eCorreo, eClave, eRepetir).any { it != null }) return
 
-        _ui.update { it.copy(cargando = true) }
+        _ui.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            delay(1000) // Simulamos carga de red para el MVP
-            _ui.update { it.copy(cargando = false, registrado = true) }
+            val error = repo.registrar(
+                nombre = s.nombre.valor,
+                apellido = s.apellido.valor,
+                correo = s.correo.valor,
+                clave = s.clave.valor
+            )
+            _ui.update {
+                if (error == null) it.copy(cargando = false, registrado = true)
+                else it.copy(cargando = false, error = error)
+            }
         }
     }
 }

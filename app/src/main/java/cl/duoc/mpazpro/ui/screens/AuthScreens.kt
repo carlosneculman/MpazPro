@@ -152,6 +152,8 @@ fun RegistroScreen(
             Spacer(Modifier.height(24.dp))
             BotonPrincipal(if (ui.cargando) "Creando cuenta…" else "Crear cuenta", vm::registrar, !ui.cargando)
             Spacer(Modifier.height(16.dp))
+            ui.error?.let { BannerError(it) }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
