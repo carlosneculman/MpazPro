@@ -122,14 +122,11 @@ fun RegistroScreen(
     vm: RegistroViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
-    val scrollState = rememberScrollState()
     LaunchedEffect(ui.registrado) { if (ui.registrado) ok() }
 
     ContenidoCentrado {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             IconButton(
@@ -165,7 +162,6 @@ fun RecuperarScreen(
 ) {
     val ui by vm.ui.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
-    val scrollState = rememberScrollState()
 
     LaunchedEffect(ui.exito) {
         if (ui.exito) {
@@ -176,9 +172,7 @@ fun RecuperarScreen(
 
     ContenidoCentrado {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             IconButton(

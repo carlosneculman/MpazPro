@@ -24,16 +24,13 @@ class UsuarioRepositorio(private val context: Context) {
     private val _usuario = MutableStateFlow(cargarSesion())
     val usuario: StateFlow<Usuario?> = _usuario.asStateFlow()
 
-    //autenticacion (backend)
-
-    /** devuelve true si el login fue exitoso. Guarda token y datos de sesion. */
     suspend fun iniciarSesion(correo: String, clave: String): Boolean = try {
         val r = RetrofitClient.api.login(LoginRequest(normalizar(correo), clave))
         val b = r.body()
         if (r.isSuccessful && b != null) {
             prefs.edit()
                 .putString(TOKEN, b.token)
-                .putString(SESION, b.usuario.id_user)
+                .putString(SESION, b.usuario.id_user.toString())
                 .putString(NOMBRE, b.usuario.nombre)
                 .putInt(ROL_ID, b.usuario.rol)
                 .putString(CORREO, normalizar(correo))
@@ -42,15 +39,11 @@ class UsuarioRepositorio(private val context: Context) {
             true
         } else false
     } catch (e: IOException) {
-        false // sin red / servidor apagado
+        false
     } catch (e: JsonParseException) {
-        false // el servidor respondió algo que no es el JSON esperado
+        false
     }
 
-    /**
-     * Crea la cuenta en el backend y luego inicia sesión automáticamente.
-     * Devuelve null si todo salió bien; si no, un mensaje de error para mostrar en pantalla.
-     */
     suspend fun registrar(
         nombre: String,
         apellido: String,
@@ -63,14 +56,14 @@ class UsuarioRepositorio(private val context: Context) {
                 email = normalizar(correo),
                 nombre_user = "${nombre.trim()} ${apellido.trim()}".trim(),
                 contrasena = clave,
-                rut_user = null,       // el formulario aún no pide RUT
-                telefono_user = null,  // ni teléfono
+                rut_user = "Sin RUT",
+                telefono_user = "Sin teléfono",
                 id_rol = idRol
             )
         )
         when {
             r.isSuccessful -> {
-                iniciarSesion(correo, clave) // si falla, la navegación cae en el login
+                iniciarSesion(correo, clave)
                 null
             }
             r.code() == 409 -> "El correo ya se encuentra registrado"
@@ -94,7 +87,6 @@ class UsuarioRepositorio(private val context: Context) {
         _usuario.value = null
     }
 
-    /** Para un futuro interceptor de OkHttp que envíe "Authorization: Bearer <token>". */
     fun obtenerToken(): String? = prefs.getString(TOKEN, null)
 
     private fun cargarSesion(): Usuario? {
@@ -110,17 +102,14 @@ class UsuarioRepositorio(private val context: Context) {
         )
     }
 
-    //ID rol backend
     private fun rolDesdeId(id: Int): RolUsuario? = when (id) {
-        ID_ROL_UTP -> RolUsuario.UTP
+        ID_ROL_UTP, 1 -> RolUsuario.UTP // Incluye 1 (Admin) por compatibilidad con cuentas previas
         ID_ROL_DOCENTE -> RolUsuario.DOCENTE
         ID_ROL_ESTUDIANTE -> RolUsuario.ESTUDIANTE
         else -> null
     }
 
     private fun normalizar(correo: String) = correo.trim().lowercase()
-
-    // datos locales
 
     fun guardarProgresoLeccion(materia: String, idLeccion: String, completada: Boolean) {
         prefs.edit().putBoolean("PROGRESO_${materia}_$idLeccion", completada).apply()
@@ -173,9 +162,8 @@ class UsuarioRepositorio(private val context: Context) {
         const val FOTO_PERFIL = "ruta_foto_perfil"
         const val RECORDATORIOS = "recordatorios_estudio_activos"
 
-        // IDs
-        const val ID_ROL_UTP = 1
-        const val ID_ROL_DOCENTE = 2
-        const val ID_ROL_ESTUDIANTE = 3
+        const val ID_ROL_ESTUDIANTE = 4
+        const val ID_ROL_DOCENTE = 5
+        const val ID_ROL_UTP = 6
     }
 }

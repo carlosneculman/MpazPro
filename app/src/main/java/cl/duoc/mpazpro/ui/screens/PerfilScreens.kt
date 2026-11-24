@@ -39,13 +39,10 @@ fun PerfilInicialScreen(
     val ui by vm.form.collectAsStateWithLifecycle()
     val u by vm.usuario.collectAsStateWithLifecycle()
     LaunchedEffect(ui.guardado) { if (ui.guardado) ok() }
-    val scrollState = rememberScrollState()
 
     ContenidoCentrado {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(scrollState),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (vol != null) {
