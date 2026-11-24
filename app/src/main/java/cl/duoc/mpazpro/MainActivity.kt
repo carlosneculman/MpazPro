@@ -1,6 +1,6 @@
 package cl.duoc.mpazpro
 
-// ORIGINAL
+
 import android.graphics.Color as ColorAndroid
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -15,8 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import cl.duoc.mpazpro.ui.navigation.AppNavHost
 import cl.duoc.mpazpro.ui.theme.MpazProTheme
-
-// MODIFICADO
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
@@ -27,7 +25,6 @@ import androidx.compose.ui.unit.Density
 import cl.duoc.mpazpro.ui.ajustes.AjustesRepositorio
 import cl.duoc.mpazpro.ui.ajustes.generarColorSchemeInclusivo
 
-// ORIGINAL
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,15 +35,13 @@ class MainActivity : ComponentActivity() {
         val repositorio = (application as MpazApplication).repositorio
         setContent {
 
-            // MODIFICADO
             val ajustesRepositorio = remember { AjustesRepositorio(applicationContext) }
             val estadoAjustes by ajustesRepositorio.estado.collectAsState()
             val densidadActual = LocalDensity.current
 
-            // ORIGINAL
             MpazProTheme {
 
-                // MODIFICADO
+
                 CompositionLocalProvider(
                     LocalDensity provides Density(
                         density = densidadActual.density,
@@ -58,9 +53,7 @@ class MainActivity : ComponentActivity() {
                         typography = MaterialTheme.typography
                     ) {
 
-                        // MODIFICADO (antes era Color.White)
                         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).safeDrawingPadding()) {
-                            // MODIFICADO (antes era AppNavHost(repositorio))
                             AppNavHost(repositorio, ajustesRepositorio)
                         }
                     }

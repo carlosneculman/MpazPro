@@ -24,24 +24,50 @@ class UsuarioRepositorio(private val context: Context) {
     private val _usuario = MutableStateFlow(cargarSesion())
     val usuario: StateFlow<Usuario?> = _usuario.asStateFlow()
 
-    suspend fun iniciarSesion(correo: String, clave: String): Boolean = try {
-        val r = RetrofitClient.api.login(LoginRequest(normalizar(correo), clave))
-        val b = r.body()
-        if (r.isSuccessful && b != null) {
-            prefs.edit()
-                .putString(TOKEN, b.token)
-                .putString(SESION, b.usuario.id_user.toString())
-                .putString(NOMBRE, b.usuario.nombre)
-                .putInt(ROL_ID, b.usuario.rol)
-                .putString(CORREO, normalizar(correo))
-                .apply()
-            _usuario.value = cargarSesion()
-            true
-        } else false
-    } catch (e: IOException) {
-        false
-    } catch (e: JsonParseException) {
-        false
+    suspend fun iniciarSesion(correo: String, clave: String): Boolean {
+        val emailLimpio = normalizar(correo)
+
+        // Acceso local temporal para pruebas de UI (con los nuevos IDs de rol)
+        if (clave == "123456") {
+            val cuentaPrueba = when (emailLimpio) {
+                "estudiante@mpaz.cl" -> Triple("100", "Sofía Estudiante", ID_ROL_ESTUDIANTE)
+                "docente@mpaz.cl" -> Triple("101", "Profe Marcela", ID_ROL_DOCENTE)
+                "utp@mpaz.cl" -> Triple("102", "Jefatura UTP", ID_ROL_UTP)
+                else -> null
+            }
+            if (cuentaPrueba != null) {
+                prefs.edit()
+                    .putString(TOKEN, "token_local_pruebas")
+                    .putString(SESION, cuentaPrueba.first)
+                    .putString(NOMBRE, cuentaPrueba.second)
+                    .putInt(ROL_ID, cuentaPrueba.third)
+                    .putString(CORREO, emailLimpio)
+                    .apply()
+                _usuario.value = cargarSesion()
+                return true
+            }
+        }
+
+        // Conexión real al backend en AWS
+        return try {
+            val r = RetrofitClient.api.login(LoginRequest(emailLimpio, clave))
+            val b = r.body()
+            if (r.isSuccessful && b != null) {
+                prefs.edit()
+                    .putString(TOKEN, b.token)
+                    .putString(SESION, b.usuario.id_user.toString())
+                    .putString(NOMBRE, b.usuario.nombre)
+                    .putInt(ROL_ID, b.usuario.rol)
+                    .putString(CORREO, emailLimpio)
+                    .apply()
+                _usuario.value = cargarSesion()
+                true
+            } else false
+        } catch (e: IOException) {
+            false
+        } catch (e: JsonParseException) {
+            false
+        }
     }
 
     suspend fun registrar(
