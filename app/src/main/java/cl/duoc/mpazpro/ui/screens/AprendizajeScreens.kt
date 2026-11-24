@@ -31,20 +31,32 @@ import cl.duoc.mpazpro.ui.theme.*
 @Composable
 fun InicioScreen(
     navM: (Materia) -> Unit,
-    navP: () -> Unit
+    navP: () -> Unit,
+    navA: () -> Unit = {}
 ) {
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
                     icon = { Icon(Icons.Default.Home, null, Modifier.size(28.dp)) },
                     label = { Text("Inicio", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
                     colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = Primario,
-                        selectedTextColor = Primario,
-                        indicatorColor = Color(0xFFE8EAF6)
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    )
+                )
+                NavigationBarItem(
+                    selected = false,
+                    onClick = navA,
+                    icon = { Icon(Icons.Default.Settings, null, Modifier.size(28.dp)) },
+                    label = { Text("Ajustes", fontSize = 14.sp) },
+                    colors = NavigationBarItemDefaults.colors(
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
                     )
                 )
                 NavigationBarItem(
@@ -53,8 +65,8 @@ fun InicioScreen(
                     icon = { Icon(Icons.Default.Person, null, Modifier.size(28.dp)) },
                     label = { Text("Perfil", fontSize = 14.sp) },
                     colors = NavigationBarItemDefaults.colors(
-                        unselectedIconColor = Color.Gray,
-                        unselectedTextColor = Color.Gray
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
                     )
                 )
             }
@@ -63,25 +75,55 @@ fun InicioScreen(
         Column(
             Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                // MODIFICADO (antes era Color.White)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(p)
                 .padding(horizontal = 20.dp)
         ) {
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(44.dp).clip(CircleShape).background(Primario), Alignment.Center) {
-                    Icon(Icons.Default.School, null, Modifier.size(24.dp), tint = Color.White)
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary),
+                    Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.School,
+                        null,
+                        Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text("Escuela Escritora", fontSize = 12.sp, color = Color.Gray)
-                    Text("Marcela Paz", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Primario)
+                    Text(
+                        "Escuela Escritora",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                    )
+                    Text(
+                        "Marcela Paz",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
             Spacer(Modifier.height(16.dp))
 
-            Text("¡Hola, Estudiante!", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
-            Text("¿Qué quieres aprender hoy?", fontSize = 16.sp, color = Color.DarkGray)
+            Text(
+                "¡Hola, Estudiante!",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                "¿Qué quieres aprender hoy?",
+                fontSize = 16.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+            )
             Spacer(Modifier.height(16.dp))
 
             LazyVerticalGrid(

@@ -128,8 +128,11 @@ fun PerfilInicialScreen(
 fun PerfilScreen(
     ini: () -> Unit,
     sal: () -> Unit,
+    mostrarAjustes: Boolean = false,
+    navAjustes: () -> Unit = {},
     vm: PerfilViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
+
     val context = LocalContext.current
     val u by vm.usuario.collectAsStateWithLifecycle()
     val noti = rememberPermisoNotificaciones { concedido ->
@@ -138,21 +141,41 @@ fun PerfilScreen(
     val scrollState = rememberScrollState()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(
                     selected = false,
                     onClick = ini,
-                    icon = { Icon(Icons.Default.Home, null) },
-                    label = { Text("Inicio") },
-                    colors = NavigationBarItemDefaults.colors(unselectedIconColor = Color.Gray, unselectedTextColor = Color.Gray)
+                    icon = { Icon(Icons.Default.Home, null, Modifier.size(28.dp)) },
+                    label = { Text("Inicio", fontSize = 14.sp) },
+                    colors = NavigationBarItemDefaults.colors(
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                    )
                 )
+                if (mostrarAjustes) {
+                    NavigationBarItem(
+                        selected = false,
+                        onClick = navAjustes,
+                        icon = { Icon(Icons.Default.Settings, null, Modifier.size(28.dp)) },
+                        label = { Text("Ajustes", fontSize = 14.sp) },
+                        colors = NavigationBarItemDefaults.colors(
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
+                        )
+                    )
+                }
                 NavigationBarItem(
                     selected = true,
                     onClick = {},
-                    icon = { Icon(Icons.Default.Person, null) },
-                    label = { Text("Perfil") },
-                    colors = NavigationBarItemDefaults.colors(selectedIconColor = Primario, selectedTextColor = Primario, indicatorColor = Color(0xFFE8EAF6))
+                    icon = { Icon(Icons.Default.Person, null, Modifier.size(28.dp)) },
+                    label = { Text("Perfil", fontSize = 14.sp, fontWeight = FontWeight.Bold) },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    )
                 )
             }
         }
@@ -160,14 +183,25 @@ fun PerfilScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(p)
                 .verticalScroll(scrollState)
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Mi perfil", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.fillMaxWidth())
-            Text("Verifica que tus datos sean correctos", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth())
+            Text(
+                "Mi perfil",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                "Verifica que tus datos sean correctos",
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                modifier = Modifier.fillMaxWidth()
+            )
             Spacer(Modifier.height(24.dp))
 
             SelectorFotoConPrevia(
@@ -177,18 +211,24 @@ fun PerfilScreen(
             )
 
             Spacer(Modifier.height(16.dp))
-            Text("${u.nombre} ${u.apellido}".trim(), fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(
+                "${u.nombre} ${u.apellido}".trim(),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
             Spacer(Modifier.height(24.dp))
 
+            val colorDivisor = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.12f)
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 FilaDatoPerfil("Nombre", "${u.nombre} ${u.apellido}".trim())
-                HorizontalDivider(color = Color(0xFFEEEEEE))
+                HorizontalDivider(color = colorDivisor)
                 FilaDatoPerfil("Rol", u.rol.ifBlank { "—" })
-                HorizontalDivider(color = Color(0xFFEEEEEE))
+                HorizontalDivider(color = colorDivisor)
                 FilaDatoPerfil("Curso", u.curso.ifBlank { "—" })
-                HorizontalDivider(color = Color(0xFFEEEEEE))
+                HorizontalDivider(color = colorDivisor)
                 FilaDatoPerfil("Correo", u.correo)
-                HorizontalDivider(color = Color(0xFFEEEEEE))
+                HorizontalDivider(color = colorDivisor)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -198,11 +238,15 @@ fun PerfilScreen(
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = null,
-                            tint = if (u.recordatorios) Primario else Color.Gray,
+                            tint = if (u.recordatorios) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Text("Recordatorios de estudio", fontSize = 14.sp, color = Color.Gray)
+                        Text(
+                            "Recordatorios de estudio",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
                     }
                     Switch(
                         checked = u.recordatorios,
@@ -214,7 +258,10 @@ fun PerfilScreen(
                                 cancelarNotificacionRecordatorio(context)
                             }
                         },
-                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = Primario)
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
                     )
                 }
             }
@@ -371,7 +418,7 @@ private fun SelectorFotoConPrevia(
 @Composable
 private fun FilaDatoPerfil(etiqueta: String, valor: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(etiqueta, fontSize = 14.sp, color = Color.Gray)
-        Text(valor.ifBlank { "—" }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color.Black)
+        Text(etiqueta, fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f))
+        Text(valor.ifBlank { "—" }, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onBackground)
     }
 }
