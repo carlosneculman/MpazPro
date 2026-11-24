@@ -21,12 +21,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
+import cl.duoc.mpazpro.data.PokemonRepository
 import cl.duoc.mpazpro.domain.*
 import cl.duoc.mpazpro.nativo.rememberReproductorAudio
 import cl.duoc.mpazpro.ui.components.*
 import cl.duoc.mpazpro.ui.theme.*
+import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
+import cl.duoc.mpazpro.data.remote.MedallaDto
+import cl.duoc.mpazpro.data.remote.RetrofitClient
+import cl.duoc.mpazpro.model.Pokemon
 
 @Composable
 fun InicioScreen(
@@ -263,21 +270,26 @@ fun MateriaScreen(
 fun LeccionScreen(
     materia: Materia,
     idLeccion: String,
-    navAtras: () -> Unit
+    navAtras: () -> Unit,
+    idUsuarioActual: Int = 1
 ) {
     val lecciones = Contenido.lecciones(materia)
     val leccion = lecciones.find { it.numero.toString() == idLeccion }
 
     var respuestaSeleccionada by rememberSaveable { mutableStateOf<Int?>(null) }
     var mostrarFeedback by rememberSaveable { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    var enviandoMedalla by remember { mutableStateOf(false) }
 
+    val scrollState = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val pokemonRepo = remember { PokemonRepository(context) }
+    var pokemonGanado by remember { mutableStateOf<Pokemon?>(null) }
     val esCorrecta = respuestaSeleccionada != null &&
             Validaciones.esRespuestaCorrecta(
                 seleccion = if (respuestaSeleccionada == 1) "Opción A" else "Opción B",
                 respuestaCorrecta = "Opción A"
             )
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -304,7 +316,6 @@ fun LeccionScreen(
                 Text(text = leccion.titulo, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Reproductor conectado al audio que el profesor haya subido para esta materia y lección
                 TarjetaReproductorAudio(
                     titulo = "Audio explicativo: ${leccion.titulo}",
                     claveLeccion = claveAudioLeccion
@@ -407,9 +418,27 @@ fun LeccionScreen(
                 Button(
                     onClick = {
                         Contenido.marcarComoCompletada(materia, leccion.numero)
-                        navAtras()
+                        enviandoMedalla = true
+                        scope.launch {
+                            val poke = pokemonRepo.obtenerPokemonAleatorio()
+                            try {
+                                RetrofitClient.api.desbloquearMedalla(
+                                    MedallaDto(
+                                        id_user = idUsuarioActual,
+                                        materia = materia.name,
+                                        numero_leccion = leccion.numero,
+                                        id_pokemon = poke.id ?: 25,
+                                        nombre_pokemon = poke.nombreFormateado
+                                    )
+                                )
+                            } catch (_: Exception) {
+                            } finally {
+                                enviandoMedalla = false
+                                pokemonGanado = poke
+                            }
+                        }
                     },
-                    enabled = esCorrecta,
+                    enabled = esCorrecta && !enviandoMedalla,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
@@ -420,10 +449,10 @@ fun LeccionScreen(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
-                        text = "Marcar como Completada",
+                        text = if (enviandoMedalla) "Guardando medalla..." else "Marcar como Completada",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (esCorrecta) Color.White else Color.DarkGray
+                        color = if (esCorrecta && !enviandoMedalla) Color.White else Color.DarkGray
                     )
                 }
             }
@@ -431,6 +460,67 @@ fun LeccionScreen(
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Lección no encontrada")
             }
+        }
+
+        pokemonGanado?.let { poke ->
+            val tiposTexto = poke.types
+                ?.mapNotNull { it.type?.name?.replaceFirstChar { c -> c.uppercase() } }
+                ?.joinToString(" / ")
+
+            AlertDialog(
+                onDismissRequest = {
+                    pokemonGanado = null
+                    navAtras()
+                },
+                containerColor = Color.White,
+                title = {
+                    Text("¡Nueva Medalla Pokémon!", fontWeight = FontWeight.ExtraBold, color = Primario)
+                },
+                text = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        AsyncImage(
+                            model = poke.imageUrl,
+                            contentDescription = poke.nombreFormateado,
+                            modifier = Modifier.size(160.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "¡Atrapaste a ${poke.nombreFormateado}!",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        if (!tiposTexto.isNullOrBlank()) {
+                            Text(
+                                text = "Tipo: $tiposTexto",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Primario
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Completaste ${materia.titulo} - Lección ${leccion?.numero ?: ""}",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            pokemonGanado = null
+                            navAtras()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primario)
+                    ) {
+                        Text("¡Genial!", fontWeight = FontWeight.Bold)
+                    }
+                }
+            )
         }
     }
 }

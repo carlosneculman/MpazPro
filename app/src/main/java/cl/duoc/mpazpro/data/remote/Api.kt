@@ -7,7 +7,9 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 import java.util.concurrent.TimeUnit
 import kotlin.jvm.java
 
@@ -17,6 +19,12 @@ interface ApiService {
 
     @POST("api/auth/registro")
     suspend fun registro(@Body b: RegistroRequest): Response<ResponseBody>
+
+    @GET("api/medallas/{id_user}")
+    suspend fun obtenerMedallas(@Path("id_user") idUser: Int): Response<List<MedallaDto>>
+
+    @POST("api/medallas/desbloquear")
+    suspend fun desbloquearMedalla(@Body request: MedallaDto): Response<DesbloquearMedallaResponse>
 }
 
 object RetrofitClient {

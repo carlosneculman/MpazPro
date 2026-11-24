@@ -165,7 +165,8 @@ fun AppNavHost(
             LeccionScreen(
                 materia = materia,
                 idLeccion = idLeccion,
-                navAtras = { navController.popBackStack() }
+                navAtras = { navController.popBackStack() },
+                idUsuarioActual = usuarioActual?.id?.toIntOrNull() ?: 1
             )
         }
 
@@ -191,7 +192,8 @@ fun AppNavHost(
                         popUpTo(Rutas.ESTUDIANTE) { inclusive = false }
                         launchSingleTop = true
                     }
-                }
+                },
+                idUsuarioActual = usuarioActual?.id?.toIntOrNull() ?: 1
             )
         }
 

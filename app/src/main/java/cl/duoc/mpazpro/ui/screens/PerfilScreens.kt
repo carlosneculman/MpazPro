@@ -3,6 +3,7 @@ package cl.duoc.mpazpro.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -21,12 +22,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.duoc.mpazpro.data.remote.MedallaDto
+import cl.duoc.mpazpro.data.remote.RetrofitClient
 import cl.duoc.mpazpro.domain.Opciones
 import cl.duoc.mpazpro.nativo.*
 import cl.duoc.mpazpro.ui.components.*
 import cl.duoc.mpazpro.ui.theme.ErrorRojo
 import cl.duoc.mpazpro.ui.theme.Primario
 import cl.duoc.mpazpro.viewmodel.*
+import coil.compose.AsyncImage
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -130,15 +134,33 @@ fun PerfilScreen(
     sal: () -> Unit,
     mostrarAjustes: Boolean = false,
     navAjustes: () -> Unit = {},
+    idUsuarioActual: Int = 1,
     vm: PerfilViewModel = viewModel(factory = AppViewModelProvider.Factory)
 ) {
-
     val context = LocalContext.current
     val u by vm.usuario.collectAsStateWithLifecycle()
     val noti = rememberPermisoNotificaciones { concedido ->
         vm.recordatorios(concedido)
     }
     val scrollState = rememberScrollState()
+
+    var medallas by remember { mutableStateOf<List<MedallaDto>>(emptyList()) }
+    var cargandoMedallas by remember { mutableStateOf(false) }
+
+    LaunchedEffect(idUsuarioActual, mostrarAjustes) {
+        if (mostrarAjustes && idUsuarioActual > 0) {
+            cargandoMedallas = true
+            try {
+                val response = RetrofitClient.api.obtenerMedallas(idUsuarioActual)
+                if (response.isSuccessful) {
+                    medallas = response.body().orEmpty()
+                }
+            } catch (_: Exception) {
+            } finally {
+                cargandoMedallas = false
+            }
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -266,6 +288,14 @@ fun PerfilScreen(
                 }
             }
 
+            if (mostrarAjustes) {
+                Spacer(Modifier.height(24.dp))
+                VitrinaMedallasPokemon(
+                    medallas = medallas,
+                    cargando = cargandoMedallas
+                )
+            }
+
             Spacer(Modifier.height(32.dp))
             OutlinedButton(
                 onClick = {
@@ -279,6 +309,119 @@ fun PerfilScreen(
                 shape = RoundedCornerShape(24.dp)
             ) {
                 Text("Cerrar sesión", color = ErrorRojo, fontSize = 16.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun VitrinaMedallasPokemon(
+    medallas: List<MedallaDto>,
+    cargando: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Mis Medallas Pokémon",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+            ) {
+                Text(
+                    text = "${medallas.size} atrapados",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when {
+            cargando -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(110.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+            medallas.isEmpty() -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        text = "Aún no tienes medallas. ¡Completa una lección para atrapar tu primer Pokémon!",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            }
+            else -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    medallas.forEach { medalla ->
+                        val imageUrl =
+                            "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${medalla.id_pokemon}.png"
+
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier.width(116.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(10.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                AsyncImage(
+                                    model = imageUrl,
+                                    contentDescription = medalla.nombre_pokemon,
+                                    modifier = Modifier.size(72.dp)
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = medalla.nombre_pokemon.replaceFirstChar { it.uppercase() },
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "${medalla.materia.lowercase().replaceFirstChar { it.uppercase() }} • L${medalla.numero_leccion}",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f),
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
     }
