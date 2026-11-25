@@ -27,3 +27,15 @@ data class RegistroRequest(
     @SerializedName("telefono_user") val telefono_user: String?,
     @SerializedName("id_rol") val id_rol: Int
 )
+
+data class UserImgRequest(
+    val id_user: Int,
+    val imagen_base64: String,
+    val mime_type: String = "image/jpeg"
+)
+
+data class UserImgResponse(
+    val id_user: Int,
+    val imagen_base64: String,
+    val mime_type: String?
+)

@@ -36,7 +36,6 @@ object Validaciones {
     fun requerido(valor: String, mensaje: String): String? =
         if (valor.isBlank()) mensaje else null
 
-    // Valida si la alternativa seleccionada por el estudiante coincide con la respuesta correcta
     fun esRespuestaCorrecta(seleccion: String, respuestaCorrecta: String): Boolean =
         seleccion.trim().equals(respuestaCorrecta.trim(), ignoreCase = true)
 }

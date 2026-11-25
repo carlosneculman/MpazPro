@@ -15,10 +15,10 @@ data class Usuario(
 
 data class ObjetivoAprendizaje(
     val idOa: String,
-    val codigoOficial: String,   // ej: "OA01"
-    val asignatura: String,      // ej: "Lenguaje"
-    val unidad: Int = 1,         // Máximo 1 unidad por materia
-    val ejeCurricular: String,   // ej: "Lectura", "Números y Operaciones"
+    val codigoOficial: String,
+    val asignatura: String,
+    val unidad: Int = 1,
+    val ejeCurricular: String,
     val descripcion: String,
     val estadoAprobacion: Boolean = false
 )

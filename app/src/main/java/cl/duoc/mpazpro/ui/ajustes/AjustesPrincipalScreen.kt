@@ -53,8 +53,6 @@ fun AjustesPrincipalScreen(
             fontWeight = FontWeight.ExtraBold,
             color = MaterialTheme.colorScheme.onBackground
         )
-
-        // Tarjeta 1: Mi mascota
         TarjetaResumenAjuste(
             icono = {
                 Box(
@@ -310,8 +308,6 @@ fun ModoInclusivoScreen(
                 )
             }
         }
-
-        // Colores de la pantalla (4 temas)
         Text(
             text = "Colores de la pantalla",
             fontSize = 15.sp,
@@ -368,8 +364,6 @@ fun ModoInclusivoScreen(
                 }
             )
         }
-
-        // Filtros de daltonismo y grises
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -399,8 +393,6 @@ fun ModoInclusivoScreen(
                 }
             )
         }
-
-        // Opciones adicionales de accesibilidad
         TarjetaCheckboxAjuste(
             titulo = "Subtítulos y lengua de señas",
             subtitulo = "En cada audio",

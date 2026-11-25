@@ -3,6 +3,7 @@ package cl.duoc.mpazpro.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +17,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -42,6 +45,7 @@ fun PerfilInicialScreen(
 ) {
     val ui by vm.form.collectAsStateWithLifecycle()
     val u by vm.usuario.collectAsStateWithLifecycle()
+    val fotoBytes by vm.fotoBytes.collectAsStateWithLifecycle()
     LaunchedEffect(ui.guardado) { if (ui.guardado) ok() }
 
     ContenidoCentrado {
@@ -64,6 +68,7 @@ fun PerfilInicialScreen(
 
             SelectorFotoConPrevia(
                 fotoGuardada = u.fotoPath,
+                fotoRemotaBytes = fotoBytes,
                 mostrarBotonesTexto = true,
                 onConfirmarFoto = vm::onFoto
             )
@@ -139,6 +144,7 @@ fun PerfilScreen(
 ) {
     val context = LocalContext.current
     val u by vm.usuario.collectAsStateWithLifecycle()
+    val fotoBytes by vm.fotoBytes.collectAsStateWithLifecycle()
     val noti = rememberPermisoNotificaciones { concedido ->
         vm.recordatorios(concedido)
     }
@@ -228,6 +234,7 @@ fun PerfilScreen(
 
             SelectorFotoConPrevia(
                 fotoGuardada = u.fotoPath,
+                fotoRemotaBytes = fotoBytes,
                 mostrarBotonesTexto = false,
                 onConfirmarFoto = vm::onFoto
             )
@@ -430,35 +437,63 @@ private fun VitrinaMedallasPokemon(
 @Composable
 private fun SelectorFotoConPrevia(
     fotoGuardada: String?,
+    fotoRemotaBytes: ByteArray?,
     mostrarBotonesTexto: Boolean,
     onConfirmarFoto: (String) -> Unit
 ) {
     var fotoTemporal by rememberSaveable { mutableStateOf<String?>(null) }
     var mostrarMenuOrigen by rememberSaveable { mutableStateOf(false) }
-
     val cam = rememberCamara { ruta ->
         fotoTemporal?.let { File(it).delete() }
         fotoTemporal = ruta
     }
-
     val gal = rememberGaleria { ruta ->
         fotoTemporal?.let { File(it).delete() }
         fotoTemporal = ruta
     }
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Box(Modifier.fillMaxWidth(), Alignment.Center) {
-            FotoPerfil(
-                fotoTemporal ?: fotoGuardada,
-                100.dp,
-                conInsigniaCamara = fotoTemporal == null,
-                onClickCamara = { mostrarMenuOrigen = true }
-            )
+            if (fotoTemporal == null && fotoRemotaBytes != null) {
+                Box(modifier = Modifier.size(100.dp)) {
+                    AsyncImage(
+                        model = fotoRemotaBytes,
+                        contentDescription = "Foto de perfil",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(CircleShape)
+                            .clickable { mostrarMenuOrigen = true }
+                    )
+                    Surface(
+                        onClick = { mostrarMenuOrigen = true },
+                        shape = CircleShape,
+                        color = Primario,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .align(Alignment.BottomEnd)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "Cambiar foto",
+                                tint = Color.White,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            } else {
+                FotoPerfil(
+                    fotoTemporal ?: fotoGuardada,
+                    100.dp,
+                    conInsigniaCamara = fotoTemporal == null,
+                    onClickCamara = { mostrarMenuOrigen = true }
+                )
+            }
         }
-
         AnimatedVisibility(visible = fotoTemporal != null) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -509,7 +544,6 @@ private fun SelectorFotoConPrevia(
                 }
             }
         }
-
         if (mostrarBotonesTexto && fotoTemporal == null) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -525,7 +559,6 @@ private fun SelectorFotoConPrevia(
             }
         }
     }
-
     if (mostrarMenuOrigen) {
         AlertDialog(
             onDismissRequest = { mostrarMenuOrigen = false },
@@ -557,7 +590,6 @@ private fun SelectorFotoConPrevia(
         )
     }
 }
-
 @Composable
 private fun FilaDatoPerfil(etiqueta: String, valor: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {

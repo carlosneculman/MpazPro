@@ -6,9 +6,12 @@ import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
+import android.util.Base64
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -28,6 +31,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import cl.duoc.mpazpro.R
 import kotlinx.coroutines.delay
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
@@ -37,10 +41,29 @@ import kotlin.math.sin
 private const val CANAL_RECORDATORIOS_ID = "canal_recordatorios_mpaz"
 private const val NOTIFICACION_RECORDATORIO_ID = 1001
 
-/**
- * Devuelve una función que abre la cámara del sistema. Al aceptar la foto se llama a
- * [onFoto] con la ruta real del archivo JPG guardado en el almacenamiento privado de la app.
- */
+fun rutaImagenABase64(rutaArchivo: String): String? {
+    return try {
+        val archivo = File(rutaArchivo)
+        if (!archivo.exists()) return null
+        val original = BitmapFactory.decodeFile(archivo.absolutePath) ?: return null
+        val escalada = Bitmap.createScaledBitmap(original, 400, 400, true)
+        val salida = ByteArrayOutputStream()
+        escalada.compress(Bitmap.CompressFormat.JPEG, 75, salida)
+        Base64.encodeToString(salida.toByteArray(), Base64.NO_WRAP)
+    } catch (e: Exception) {
+        null
+    }
+}
+
+fun base64ABytes(base64: String?): ByteArray? {
+    if (base64.isNullOrBlank()) return null
+    return try {
+        Base64.decode(base64, Base64.DEFAULT)
+    } catch (e: Exception) {
+        null
+    }
+}
+
 @Composable
 fun rememberCamara(onFoto: (String) -> Unit): () -> Unit {
     val context = LocalContext.current
@@ -68,10 +91,6 @@ fun rememberCamara(onFoto: (String) -> Unit): () -> Unit {
     }
 }
 
-/**
- * Devuelve una función que abre la galería del sistema. Al elegir una imagen, la copia
- * al almacenamiento privado de la app y llama a [onFoto] con la ruta real del archivo JPG.
- */
 @Composable
 fun rememberGaleria(onFoto: (String) -> Unit): () -> Unit {
     val context = LocalContext.current
@@ -109,10 +128,6 @@ fun rememberGaleria(onFoto: (String) -> Unit): () -> Unit {
     }
 }
 
-/**
- * Abre el selector de archivos del teléfono para que el profesor elija cualquier audio
- * (MP3, WAV, M4A, OGG, etc.) de cualquier duración, guardándolo para la lección.
- */
 @Composable
 fun rememberSelectorAudio(
     claveLeccion: String,
@@ -157,9 +172,6 @@ fun rememberSelectorAudio(
     }
 }
 
-/**
- * Obtiene la ruta del audio subido por el profesor para una lección específica, si existe.
- */
 fun obtenerRutaAudioGuardado(context: Context, claveLeccion: String): String? {
     val carpeta = File(context.filesDir, "audios")
     if (!carpeta.exists()) return null
@@ -168,10 +180,6 @@ fun obtenerRutaAudioGuardado(context: Context, claveLeccion: String): String? {
         ?.absolutePath
 }
 
-/**
- * Pide el permiso de notificaciones (Android 13+), avisa el resultado con [onResultado]
- * y lanza la notificación de recordatorio de estudio cuando queda habilitado.
- */
 @Composable
 fun rememberPermisoNotificaciones(onResultado: (Boolean) -> Unit): () -> Unit {
     val context = LocalContext.current
@@ -207,9 +215,6 @@ fun rememberPermisoNotificaciones(onResultado: (Boolean) -> Unit): () -> Unit {
     }
 }
 
-/**
- * Crea el canal de notificaciones y muestra el recordatorio de estudio de la Escuela Marcela Paz.
- */
 fun mostrarNotificacionRecordatorio(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val canal = NotificationChannel(
@@ -241,17 +246,11 @@ fun mostrarNotificacionRecordatorio(context: Context) {
     Toast.makeText(context, "Recordatorio de estudio activado", Toast.LENGTH_SHORT).show()
 }
 
-/**
- * Cancela la notificación activa cuando el usuario apaga el interruptor de recordatorios.
- */
 fun cancelarNotificacionRecordatorio(context: Context) {
     NotificationManagerCompat.from(context).cancel(NOTIFICACION_RECORDATORIO_ID)
     Toast.makeText(context, "Recordatorio de estudio desactivado", Toast.LENGTH_SHORT).show()
 }
 
-/**
- * Estado y controles del reproductor de audio nativo.
- */
 class ControladorAudio(
     val reproduciendo: Boolean,
     val posicionMs: Int,
@@ -262,9 +261,6 @@ class ControladorAudio(
     val saltarSegundos: (Int) -> Unit
 )
 
-/**
- * Inicializa un reproductor MediaPlayer nativo con soporte para el audio subido por el docente.
- */
 @Composable
 fun rememberReproductorAudio(
     claveLeccion: String = "general",

@@ -25,6 +25,12 @@ interface ApiService {
 
     @POST("api/medallas/desbloquear")
     suspend fun desbloquearMedalla(@Body request: MedallaDto): Response<DesbloquearMedallaResponse>
+
+    @POST("api/user-img")
+    suspend fun guardarFotoPerfil(@Body request: UserImgRequest): Response<Unit>
+
+    @GET("api/user-img/{id_user}")
+    suspend fun obtenerFotoPerfil(@Path("id_user") idUser: Int): Response<UserImgResponse>
 }
 
 object RetrofitClient {

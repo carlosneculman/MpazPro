@@ -47,7 +47,6 @@ class LoginViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
 
         _ui.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            // Llamamos a la función suspendida del repositorio MVP
             val ok = repo.iniciarSesion(s.correo.valor, s.clave.valor)
             _ui.update {
                 if (ok) it.copy(cargando = false, ingreso = true)
@@ -180,7 +179,7 @@ class RecuperarViewModel(private val repo: UsuarioRepositorio) : ViewModel() {
 
         _ui.update { it.copy(cargando = true) }
         viewModelScope.launch {
-            delay(1000) // Simulamos proceso en MVP
+            delay(1000)
             _ui.update { it.copy(cargando = false, exito = true) }
         }
     }

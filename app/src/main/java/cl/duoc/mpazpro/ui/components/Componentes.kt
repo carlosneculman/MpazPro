@@ -84,8 +84,6 @@ fun BarraProgreso(fraccion: Float, color: Color) {
 @Composable
 fun FotoPerfil(ruta: String?, tam: Dp, conInsigniaCamara: Boolean = false, onClickCamara: () -> Unit = {}) {
     val lado = with(LocalDensity.current) { tam.roundToPx() }
-    // Se decodifica fuera del hilo principal y reducida al tamaño que se muestra
-    // (antes se leía la foto completa de la cámara en el hilo de UI: tirones y riesgo de OutOfMemory).
     val bit by produceState<ImageBitmap?>(null, ruta, lado) {
         value = withContext(Dispatchers.IO) { cargarFoto(ruta, lado) }
     }

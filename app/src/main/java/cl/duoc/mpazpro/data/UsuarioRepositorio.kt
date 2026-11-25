@@ -17,17 +17,13 @@ import java.io.FileOutputStream
 import java.io.IOException
 
 class UsuarioRepositorio(private val context: Context) {
-
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences("mpazpro_usuarios", Context.MODE_PRIVATE)
-
     private val _usuario = MutableStateFlow(cargarSesion())
     val usuario: StateFlow<Usuario?> = _usuario.asStateFlow()
 
     suspend fun iniciarSesion(correo: String, clave: String): Boolean {
         val emailLimpio = normalizar(correo)
-
-        // Acceso local temporal para pruebas de UI (con los nuevos IDs de rol)
         if (clave == "123456") {
             val cuentaPrueba = when (emailLimpio) {
                 "estudiante@mpaz.cl" -> Triple("100", "Sofía Estudiante", ID_ROL_ESTUDIANTE)
@@ -47,8 +43,6 @@ class UsuarioRepositorio(private val context: Context) {
                 return true
             }
         }
-
-        // Conexión real al backend en AWS
         return try {
             val r = RetrofitClient.api.login(LoginRequest(emailLimpio, clave))
             val b = r.body()
@@ -103,14 +97,33 @@ class UsuarioRepositorio(private val context: Context) {
     }
 
     fun cerrarSesion() {
-        prefs.edit()
+        val idActual = prefs.getString(SESION, null)
+        val editor = prefs.edit()
             .remove(SESION)
             .remove(TOKEN)
             .remove(NOMBRE)
             .remove(CORREO)
             .remove(ROL_ID)
-            .apply()
+            .remove(FOTO_PERFIL)
+
+        if (!idActual.isNullOrBlank()) {
+            editor.remove(claveFotoPerfil(idActual))
+        }
+        editor.apply()
+
+        limpiarArchivosFotosLocales()
         _usuario.value = null
+    }
+
+    private fun limpiarArchivosFotosLocales() {
+        try {
+            File(context.filesDir, "foto_perfil_usuario.jpg").delete()
+            val carpetaFotos = File(context.filesDir, "fotos")
+            if (carpetaFotos.exists()) {
+                carpetaFotos.listFiles()?.forEach { it.delete() }
+            }
+        } catch (_: Exception) {
+        }
     }
 
     fun obtenerToken(): String? = prefs.getString(TOKEN, null)
@@ -123,13 +136,13 @@ class UsuarioRepositorio(private val context: Context) {
             correo = prefs.getString(CORREO, "") ?: "",
             rol = rolDesdeId(prefs.getInt(ROL_ID, -1)) ?: return null,
             curso = "3° Básico",
-            fotoPath = obtenerRutaFotoPerfil(),
+            fotoPath = obtenerRutaFotoPerfil(id),
             recordatorios = obtenerRecordatorios()
         )
     }
 
     private fun rolDesdeId(id: Int): RolUsuario? = when (id) {
-        ID_ROL_UTP, 1 -> RolUsuario.UTP // Incluye 1 (Admin) por compatibilidad con cuentas previas
+        ID_ROL_UTP, 1 -> RolUsuario.UTP
         ID_ROL_DOCENTE -> RolUsuario.DOCENTE
         ID_ROL_ESTUDIANTE -> RolUsuario.ESTUDIANTE
         else -> null
@@ -146,8 +159,16 @@ class UsuarioRepositorio(private val context: Context) {
     }
 
     fun guardarRutaFotoPerfil(ruta: String) {
-        prefs.edit().putString(FOTO_PERFIL, ruta).apply()
-        _usuario.value = _usuario.value?.copy(fotoPath = ruta)
+        val idActual = _usuario.value?.id ?: prefs.getString(SESION, null) ?: return
+        val rutaLimpia = ruta.ifBlank { null }
+        val editor = prefs.edit()
+        if (rutaLimpia == null) {
+            editor.remove(claveFotoPerfil(idActual))
+        } else {
+            editor.putString(claveFotoPerfil(idActual), rutaLimpia)
+        }
+        editor.apply()
+        _usuario.value = _usuario.value?.copy(fotoPath = rutaLimpia)
     }
 
     fun guardarRecordatorios(activo: Boolean) {
@@ -175,9 +196,13 @@ class UsuarioRepositorio(private val context: Context) {
         }
     }
 
-    fun obtenerRutaFotoPerfil(): String? {
-        return prefs.getString(FOTO_PERFIL, null)
+    fun obtenerRutaFotoPerfil(idUsuario: String? = null): String? {
+        val id = idUsuario ?: _usuario.value?.id ?: prefs.getString(SESION, null) ?: return null
+        val ruta = prefs.getString(claveFotoPerfil(id), null) ?: return null
+        return if (File(ruta).exists()) ruta else null
     }
+
+    private fun claveFotoPerfil(idUsuario: String) = "${FOTO_PERFIL}_$idUsuario"
 
     private companion object {
         const val SESION = "sesion_activa_id"
