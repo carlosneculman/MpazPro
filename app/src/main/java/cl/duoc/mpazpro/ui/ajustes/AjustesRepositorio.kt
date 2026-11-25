@@ -80,7 +80,6 @@ enum class FiltroColor(val titulo: String) {
 }
 
 data class AjustesEstado(
-    // Mi mascota y traje
     val mascota: MascotaTipo = MascotaTipo.PERRO,
     val nombreMascota: String = "Bruno",
     val fiestaSeleccionada: FiestaChile = FiestaChile.FIESTAS_PATRIAS,
@@ -89,14 +88,10 @@ data class AjustesEstado(
     val gorroPuesto: Boolean = true,
     val poleraPuesta: Boolean = true,
     val zapatosPuestos: Boolean = true,
-
-    // Ayudas rápidas
     val lecturaVozAlta: Boolean = true,
     val comandosVoz: Boolean = true,
     val recordatorioEstudio: Boolean = false,
-
-    // Modo inclusivo
-    val escalaTexto: Float = 1.0f, // 0.85f (chica) .. 1.0f (mediana) .. 1.35f (grande)
+    val escalaTexto: Float = 1.0f,
     val tema: TemaPantalla = TemaPantalla.NORMAL,
     val filtroColor: FiltroColor = FiltroColor.SIN_FILTRO,
     val subtitulosYSenas: Boolean = true,
@@ -180,7 +175,6 @@ class AjustesRepositorio(context: Context) {
             .apply()
     }
 
-    // Mascota y fiestas
     fun guardarMascota(tipo: MascotaTipo, nombre: String) = actualizar {
         it.copy(mascota = tipo, nombreMascota = nombre.trim().ifBlank { "Bruno" })
     }
@@ -190,20 +184,14 @@ class AjustesRepositorio(context: Context) {
     fun setPiezasTraje(gorro: Boolean, polera: Boolean, zapatos: Boolean) = actualizar {
         it.copy(gorroPuesto = gorro, poleraPuesta = polera, zapatosPuestos = zapatos)
     }
-
-    // Ayudas rápidas
     fun setLecturaVozAlta(activo: Boolean) = actualizar { it.copy(lecturaVozAlta = activo) }
     fun setComandosVoz(activo: Boolean) = actualizar { it.copy(comandosVoz = activo) }
     fun setRecordatorioEstudio(activo: Boolean) = actualizar { it.copy(recordatorioEstudio = activo) }
-
-    // Modo inclusivo (ajustes individuales)
     fun setEscalaTexto(escala: Float) = actualizar { it.copy(escalaTexto = escala.coerceIn(0.85f, 1.35f)) }
     fun elegirTema(tema: TemaPantalla) = actualizar { it.copy(tema = tema) }
     fun elegirFiltroColor(filtro: FiltroColor) = actualizar { it.copy(filtroColor = filtro) }
     fun setSubtitulosYSenas(activo: Boolean) = actualizar { it.copy(subtitulosYSenas = activo) }
     fun setAvisosVibracionYLuz(activo: Boolean) = actualizar { it.copy(avisosVibracionYLuz = activo) }
-
-    // Atajos "Toca lo que se parece a ti"
     fun aplicarAtajoLetrasChicas() = actualizar { it.copy(escalaTexto = 1.30f) }
     fun aplicarAtajoMolestaLuz() = actualizar { it.copy(tema = TemaPantalla.OSCURO) }
     fun aplicarAtajoConfundoColores() = actualizar { it.copy(filtroColor = FiltroColor.ROJO_VERDE) }
@@ -232,7 +220,6 @@ class AjustesRepositorio(context: Context) {
 }
 
 fun generarColorSchemeInclusivo(estado: AjustesEstado): ColorScheme {
-    // 1. Filtros de daltonismo / grises
     when (estado.filtroColor) {
         FiltroColor.GRISES -> {
             return if (estado.tema == TemaPantalla.OSCURO || estado.tema == TemaPantalla.CONTRASTE) {
@@ -293,15 +280,13 @@ fun generarColorSchemeInclusivo(estado: AjustesEstado): ColorScheme {
         }
         FiltroColor.SIN_FILTRO -> Unit
     }
-
-    // 2. Temas de pantalla principales
     return when (estado.tema) {
         TemaPantalla.NORMAL -> lightColorScheme(
             primary = Color(0xFF2554D7),
             onPrimary = Color.White,
             secondary = Color(0xFFFCC737),
             onSecondary = Color(0xFF1E1E1E),
-            background = Color(0xFFFFF8E8), // Crema cálido del diseño
+            background = Color(0xFFFFF8E8),
             onBackground = Color(0xFF1B1E28),
             surface = Color.White,
             onSurface = Color(0xFF1B1E28),

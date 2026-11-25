@@ -328,7 +328,6 @@ fun LeccionScreen(
     idLeccion: String,
     navAtras: () -> Unit,
     idUsuarioActual: Int = 1,
-    // MODIFICADO: parámetros opcionales de mascota
     mascotaEmoji: String = "🐶",
     mascotaNombre: String = "Copito"
 ) {

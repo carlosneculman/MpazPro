@@ -48,7 +48,6 @@ fun DocenteScreen(
         mutableStateOf(Contenido.lecciones(materiaSeleccionada))
     }
 
-    // Vista de personalización del profesor (similar a la vista del alumno) con carga de audio
     if (numeroLeccionEditando != null || creandoNuevaLeccion) {
         val siguienteNumero = (listaLecciones.maxOfOrNull { it.numero } ?: 0) + 1
         val leccionBase = if (creandoNuevaLeccion) {
@@ -138,8 +137,6 @@ fun DocenteScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Fila con las 4 materias antes de Lecciones del Curso
             Text("Selecciona una asignatura:", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -405,8 +402,6 @@ private fun EditorLeccionDocenteView(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Sección de audio similar a la galería de fotos: permite elegir cualquier audio y detecta su tiempo
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -442,8 +437,6 @@ private fun EditorLeccionDocenteView(
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
-
-                    // Vista previa en vivo del reproductor tal como lo verá el estudiante
                     TarjetaReproductorAudio(
                         titulo = titulo.ifBlank { "Audio de la lección ${leccionInicial.numero}" },
                         claveLeccion = claveAudio,

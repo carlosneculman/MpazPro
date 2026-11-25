@@ -43,7 +43,6 @@ data class SolicitudRevision(
     var estado: String = "PENDIENTE"
 )
 
-// Colores oficiales de cada asignatura para no depender del import externo
 private fun Materia.colorAsignaturaUtp(): Color = when (this) {
     Materia.LENGUAJE -> Color(0xFFC62828)
     Materia.MATEMATICAS -> Color(0xFF0D5C9E)
@@ -84,8 +83,6 @@ fun UTPScreen(
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Tarjeta superior de Revisiones Curriculares con contadores dinámicos
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Primario),
@@ -139,8 +136,6 @@ fun UTPScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Barra de filtros minimalista por asignatura
             Text(
                 text = "Filtrar por asignatura:",
                 fontSize = 14.sp,
@@ -315,8 +310,6 @@ private fun TarjetaSolicitudUtp(
 
             if (item.estado == EstadoRevisionUtp.PENDIENTE) {
                 Spacer(modifier = Modifier.height(14.dp))
-
-                // Reproductor compacto integrado tal como en el boceto de Jefatura UTP
                 ReproductorCompactoUtp(claveLeccion = item.claveAudio)
 
                 Spacer(modifier = Modifier.height(16.dp))

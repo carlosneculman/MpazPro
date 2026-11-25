@@ -85,8 +85,6 @@ fun AppNavHost(
 
     val usuarioActual by repositorio.usuario.collectAsState()
     val esEstudiante = usuarioActual?.rol == RolUsuario.ESTUDIANTE
-
-    // MODIFICADO: lee en tiempo real la mascota elegida en Ajustes
     val ajustesEstado by ajustesRepositorio.estado.collectAsState()
     val mascotaEmojiActual = ajustesEstado.mascota.emoji
     val mascotaNombreActual = ajustesEstado.nombreMascota.ifBlank { "Bruno" }
@@ -144,7 +142,6 @@ fun AppNavHost(
         }
 
         composable(Rutas.ESTUDIANTE) {
-            // MODIFICADO: pasa emoji y nombre real de la mascota al Inicio
             InicioScreen(
                 navM = { materia -> navController.navigate("${Rutas.MATERIA_DETALLE}/${materia.name}") },
                 navP = { navController.navigate(Rutas.PERFIL) { launchSingleTop = true } },
@@ -169,8 +166,6 @@ fun AppNavHost(
             val materiaId = backStackEntry.arguments?.getString("materiaId") ?: return@composable
             val idLeccion = backStackEntry.arguments?.getString("idLeccion") ?: return@composable
             val materia = cl.duoc.mpazpro.domain.Materia.valueOf(materiaId)
-
-            // MODIFICADO: pasa emoji y nombre real de la mascota a las lecciones (sin tocar idUsuarioActual ni Pokémon)
             LeccionScreen(
                 materia = materia,
                 idLeccion = idLeccion,
