@@ -48,7 +48,10 @@ fun DocenteScreen(
         mutableStateOf(Contenido.lecciones(materiaSeleccionada))
     }
 
-    // Vista de personalización del profesor (similar a la vista del alumno) con carga de audio
+    val pendientesUtpMateria = Contenido.obtenerSolicitudesUtp().count {
+        it.materia == materiaSeleccionada && it.estado == EstadoRevisionUtp.PENDIENTE
+    }
+
     if (numeroLeccionEditando != null || creandoNuevaLeccion) {
         val siguienteNumero = (listaLecciones.maxOfOrNull { it.numero } ?: 0) + 1
         val leccionBase = if (creandoNuevaLeccion) {
@@ -58,7 +61,13 @@ fun DocenteScreen(
                 estado = if (listaLecciones.isEmpty()) EstadoLeccion.EN_CURSO else EstadoLeccion.BLOQUEADA,
                 objetivoRelacionado = Contenido.objetivoPorMateria(materiaSeleccionada),
                 descripcion = "Módulo de aprendizaje interactivo con apoyo de audio.",
-                contenido = "Escribe aquí las instrucciones y el contenido pedagógico de la lección."
+                contenido = "Escribe aquí las instrucciones y el contenido pedagógico de la lección.",
+                pistaMascota = "¡Tú puedes! Escucha el audio y lee con calma.",
+                iconoVisual = "📘",
+                pregunta = "¿Cuál es la respuesta correcta para completar esta lección?",
+                opcionA = "Opción A",
+                opcionB = "Opción B",
+                respuestaCorrecta = "A"
             )
         } else {
             listaLecciones.find { it.numero == numeroLeccionEditando }
@@ -132,14 +141,13 @@ fun DocenteScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text("Total Lecciones: ${listaLecciones.size}", color = Color.White, fontSize = 12.sp)
-                        Text("En revisión UTP: 1", color = Color.White, fontSize = 12.sp)
+                        Text("En revisión UTP: $pendientesUtpMateria", color = Color.White, fontSize = 12.sp)
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Fila con las 4 materias antes de Lecciones del Curso
             Text("Selecciona una asignatura:", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.DarkGray)
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -225,11 +233,22 @@ fun DocenteScreen(
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(leccion.titulo, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                Text(
+                                    text = "${leccion.iconoVisual}${leccion.titulo}",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 15.sp
+                                )
                                 Text(leccion.descripcion, fontSize = 12.sp, color = Color.Gray)
+                                Text(
+                                    text = "Pregunta: ${leccion.pregunta} (Correcta:${leccion.respuestaCorrecta})",
+                                    fontSize = 11.sp,
+                                    color = Color.DarkGray,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                                 leccion.objetivoRelacionado?.let {
                                     Text(
-                                        text = "OA: ${it.codigoOficial} - ${it.ejeCurricular}",
+                                        text = "OA: ${it.codigoOficial} -${it.ejeCurricular}",
                                         fontSize = 10.sp,
                                         color = colorMateria,
                                         fontWeight = FontWeight.Medium
@@ -262,7 +281,8 @@ fun DocenteScreen(
                     ) {
                         Text("Rendimiento del Curso (Tercero Básico A)", fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         Text("• Asignatura seleccionada: ${materiaSeleccionada.titulo}", fontSize = 13.sp)
-                        Text("• Fortalezas: Participación activa en módulos con apoyo de audio.", fontSize = 13.sp, color = Color(0xFF2E7D32))
+                        Text("• Total de lecciones cargadas: ${listaLecciones.size}", fontSize = 13.sp)
+                        Text("• Fortalezas: Participación activa en módulos con apoyo de audio y mascota.", fontSize = 13.sp, color = Color(0xFF2E7D32))
                         Text("• Aspectos a Reforzar: Completar las etapas pendientes de la unidad.", fontSize = 13.sp, color = Color(0xFFC62828))
 
                         HorizontalDivider(color = Color.LightGray)
@@ -325,12 +345,18 @@ private fun EditorLeccionDocenteView(
     val context = LocalContext.current
     val claveAudio = "${materia.name}_${leccionInicial.numero}"
 
-    var titulo by rememberSaveable { mutableStateOf(leccionInicial.titulo) }
-    var descripcion by rememberSaveable { mutableStateOf(leccionInicial.descripcion) }
-    var contenido by rememberSaveable { mutableStateOf(leccionInicial.contenido) }
-    var errorTitulo by rememberSaveable { mutableStateOf(false) }
+    var titulo by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.titulo) }
+    var descripcion by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.descripcion) }
+    var contenido by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.contenido) }
+    var iconoVisual by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.iconoVisual) }
+    var pistaMascota by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.pistaMascota) }
+    var pregunta by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.pregunta) }
+    var opcionA by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.opcionA) }
+    var opcionB by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.opcionB) }
+    var respuestaCorrecta by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(leccionInicial.respuestaCorrecta) }
+    var errorTitulo by rememberSaveable(leccionInicial.numero, esNueva) { mutableStateOf(false) }
 
-    var rutaAudioSubido by rememberSaveable {
+    var rutaAudioSubido by rememberSaveable(leccionInicial.numero, esNueva) {
         mutableStateOf(obtenerRutaAudioGuardado(context, claveAudio))
     }
 
@@ -404,9 +430,18 @@ private fun EditorLeccionDocenteView(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            Spacer(modifier = Modifier.height(8.dp))
+
+            OutlinedTextField(
+                value = iconoVisual,
+                onValueChange = { iconoVisual = it },
+                label = { Text("Ícono visual (emojis de apoyo)") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Sección de audio similar a la galería de fotos: permite elegir cualquier audio y detecta su tiempo
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -443,7 +478,6 @@ private fun EditorLeccionDocenteView(
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Vista previa en vivo del reproductor tal como lo verá el estudiante
                     TarjetaReproductorAudio(
                         titulo = titulo.ifBlank { "Audio de la lección ${leccionInicial.numero}" },
                         claveLeccion = claveAudio,
@@ -458,9 +492,107 @@ private fun EditorLeccionDocenteView(
                 value = contenido,
                 onValueChange = { contenido = it },
                 label = { Text("Contenido e instrucciones para el alumno") },
-                minLines = 4,
+                minLines = 3,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            OutlinedTextField(
+                value = pistaMascota,
+                onValueChange = { pistaMascota = it },
+                label = { Text("Pista de la mascota") },
+                minLines = 2,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                border = BorderStroke(1.dp, Color(0xFFE0E0E0))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Actividad de comprobación (A / B)",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        color = Color.Black
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    OutlinedTextField(
+                        value = pregunta,
+                        onValueChange = { pregunta = it },
+                        label = { Text("Pregunta para el estudiante") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = opcionA,
+                        onValueChange = { opcionA = it },
+                        label = { Text("Opción A") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = opcionB,
+                        onValueChange = { opcionB = it },
+                        label = { Text("Opción B") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Respuesta correcta:",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.DarkGray
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        val esCorrectaA = respuestaCorrecta.equals("A", ignoreCase = true)
+                        Button(
+                            onClick = { respuestaCorrecta = "A" },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (esCorrectaA) Color(0xFF2E7D32) else Color.White,
+                                contentColor = if (esCorrectaA) Color.White else Color.Black
+                            ),
+                            border = BorderStroke(1.dp, if (esCorrectaA) Color(0xFF2E7D32) else Color.LightGray)
+                        ) {
+                            Text("Correcta: A", fontWeight = FontWeight.Bold)
+                        }
+
+                        Button(
+                            onClick = { respuestaCorrecta = "B" },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (!esCorrectaA) Color(0xFF2E7D32) else Color.White,
+                                contentColor = if (!esCorrectaA) Color.White else Color.Black
+                            ),
+                            border = BorderStroke(1.dp, if (!esCorrectaA) Color(0xFF2E7D32) else Color.LightGray)
+                        ) {
+                            Text("Correcta: B", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -473,7 +605,13 @@ private fun EditorLeccionDocenteView(
                             leccionInicial.copy(
                                 titulo = titulo.trim(),
                                 descripcion = descripcion.ifBlank { "Módulo de aprendizaje interactivo con apoyo de audio." },
-                                contenido = contenido.ifBlank { "Sigue las instrucciones del audio y responde la pregunta." }
+                                contenido = contenido.ifBlank { "Sigue las instrucciones del audio y responde la pregunta." },
+                                iconoVisual = iconoVisual.ifBlank { "📘" },
+                                pistaMascota = pistaMascota.ifBlank { "¡Tú puedes! Escucha el audio y lee con calma." },
+                                pregunta = pregunta.ifBlank { "¿Cuál es la respuesta correcta para completar esta lección?" },
+                                opcionA = opcionA.ifBlank { "Opción A" },
+                                opcionB = opcionB.ifBlank { "Opción B" },
+                                respuestaCorrecta = if (respuestaCorrecta.equals("B", ignoreCase = true)) "B" else "A"
                             )
                         )
                     }

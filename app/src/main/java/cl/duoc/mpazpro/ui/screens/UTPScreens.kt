@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.duoc.mpazpro.domain.Contenido
 import cl.duoc.mpazpro.domain.EstadoRevisionUtp
 import cl.duoc.mpazpro.domain.Materia
 import cl.duoc.mpazpro.domain.SolicitudUtp
@@ -43,7 +44,6 @@ data class SolicitudRevision(
     var estado: String = "PENDIENTE"
 )
 
-// Colores oficiales de cada asignatura para no depender del import externo
 private fun Materia.colorAsignaturaUtp(): Color = when (this) {
     Materia.LENGUAJE -> Color(0xFFC62828)
     Materia.MATEMATICAS -> Color(0xFF0D5C9E)
@@ -85,7 +85,6 @@ fun UTPScreen(
         ) {
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Tarjeta superior de Revisiones Curriculares con contadores dinámicos
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = Primario),
@@ -140,7 +139,6 @@ fun UTPScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Barra de filtros minimalista por asignatura
             Text(
                 text = "Filtrar por asignatura:",
                 fontSize = 14.sp,
@@ -233,6 +231,7 @@ private fun TarjetaSolicitudUtp(
     onSolicitarCambios: () -> Unit
 ) {
     val colorMateria = item.materia.colorAsignaturaUtp()
+    val leccionAsociada = Contenido.lecciones(item.materia).find { it.numero == item.numeroLeccion }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -250,7 +249,7 @@ private fun TarjetaSolicitudUtp(
                     text = item.materia.name,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Primario
+                    color = colorMateria
                 )
 
                 when (item.estado) {
@@ -295,7 +294,7 @@ private fun TarjetaSolicitudUtp(
 
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = item.titulo,
+                text = if (leccionAsociada != null) "${leccionAsociada.iconoVisual} ${item.titulo}" else item.titulo,
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp,
                 color = Color.Black
@@ -313,10 +312,47 @@ private fun TarjetaSolicitudUtp(
                 color = Color.Black.copy(alpha = 0.8f)
             )
 
+            if (leccionAsociada != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = colorMateria.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, colorMateria.copy(alpha = 0.25f))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Pregunta: ${leccionAsociada.pregunta}",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "A) ${leccionAsociada.opcionA}${if (leccionAsociada.respuestaCorrecta.equals("A", true)) " ✓" else ""}",
+                            fontSize = 12.sp,
+                            color = if (leccionAsociada.respuestaCorrecta.equals("A", true)) Color(0xFF2E7D32) else Color.DarkGray,
+                            fontWeight = if (leccionAsociada.respuestaCorrecta.equals("A", true)) FontWeight.Bold else FontWeight.Normal
+                        )
+                        Text(
+                            text = "B) ${leccionAsociada.opcionB}${if (leccionAsociada.respuestaCorrecta.equals("B", true)) " ✓" else ""}",
+                            fontSize = 12.sp,
+                            color = if (leccionAsociada.respuestaCorrecta.equals("B", true)) Color(0xFF2E7D32) else Color.DarkGray,
+                            fontWeight = if (leccionAsociada.respuestaCorrecta.equals("B", true)) FontWeight.Bold else FontWeight.Normal
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Pista mascota: ${leccionAsociada.pistaMascota}",
+                            fontSize = 12.sp,
+                            color = Color.DarkGray
+                        )
+                    }
+                }
+            }
+
             if (item.estado == EstadoRevisionUtp.PENDIENTE) {
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Reproductor compacto integrado tal como en el boceto de Jefatura UTP
                 ReproductorCompactoUtp(claveLeccion = item.claveAudio)
 
                 Spacer(modifier = Modifier.height(16.dp))
