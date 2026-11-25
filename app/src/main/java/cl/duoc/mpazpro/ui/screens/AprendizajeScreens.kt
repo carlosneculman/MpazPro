@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import cl.duoc.mpazpro.data.PokemonRepository
 import cl.duoc.mpazpro.domain.*
@@ -39,8 +40,15 @@ import cl.duoc.mpazpro.model.Pokemon
 fun InicioScreen(
     navM: (Materia) -> Unit,
     navP: () -> Unit,
-    navA: () -> Unit = {}
+    navA: () -> Unit = {},
+    mascotaEmoji: String = "🐶",
+    mascotaNombre: String = "Copito"
 ) {
+    val frasesMascota = remember {
+        listOf("¡Vamos!", "¡Tú puedes!", "¡A jugar!", "¡Genial!")
+    }
+    var indiceFrase by rememberSaveable { mutableIntStateOf(0) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
@@ -82,7 +90,6 @@ fun InicioScreen(
         Column(
             Modifier
                 .fillMaxSize()
-                // MODIFICADO (antes era Color.White)
                 .background(MaterialTheme.colorScheme.background)
                 .padding(p)
                 .padding(horizontal = 20.dp)
@@ -120,17 +127,59 @@ fun InicioScreen(
             }
             Spacer(Modifier.height(16.dp))
 
-            Text(
-                "¡Hola, Estudiante!",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                "¿Qué quieres aprender hoy?",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        "¡Hola, Estudiante!",
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        "¿Qué quieres aprender hoy?",
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f)
+                    )
+                }
+
+                Spacer(Modifier.width(10.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                    border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+                    modifier = Modifier.clickable {
+                        indiceFrase = (indiceFrase + 1) % frasesMascota.size
+                    }
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = frasesMascota[indiceFrase],
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = mascotaEmoji,
+                            fontSize = 30.sp
+                        )
+                        Text(
+                            text = mascotaNombre,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+            }
+
             Spacer(Modifier.height(16.dp))
 
             LazyVerticalGrid(
@@ -189,6 +238,7 @@ fun MateriaScreen(
     val lecciones = Contenido.lecciones(materia)
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text(materia.titulo, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp) },
@@ -204,7 +254,7 @@ fun MateriaScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.colorScheme.background)
                 .padding(padding),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -216,7 +266,13 @@ fun MateriaScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(enabled = !estaBloqueada) { navLeccion(leccion.numero.toString()) },
-                    colors = CardDefaults.cardColors(containerColor = if (estaBloqueada) Color(0xFFEEEEEE) else Color.White),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (estaBloqueada) {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    ),
                     elevation = CardDefaults.cardElevation(defaultElevation = if (estaBloqueada) 0.dp else 2.dp)
                 ) {
                     Row(
@@ -244,15 +300,15 @@ fun MateriaScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "${leccion.numero}.${leccion.titulo}",
+                                text = "${leccion.numero}. ${leccion.titulo}",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (estaBloqueada) Color.Gray else Color.Black
+                                color = if (estaBloqueada) Color.Gray else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = leccion.descripcion,
                                 fontSize = 14.sp,
-                                color = Color.Gray
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.65f)
                             )
                         }
                         if (!estaBloqueada) {
@@ -271,34 +327,60 @@ fun LeccionScreen(
     materia: Materia,
     idLeccion: String,
     navAtras: () -> Unit,
-    idUsuarioActual: Int = 1
+    idUsuarioActual: Int = 1,
+    // MODIFICADO: parámetros opcionales de mascota
+    mascotaEmoji: String = "🐶",
+    mascotaNombre: String = "Copito"
 ) {
+    val colores = materia.colores()
     val lecciones = Contenido.lecciones(materia)
     val leccion = lecciones.find { it.numero.toString() == idLeccion }
 
-    var respuestaSeleccionada by rememberSaveable { mutableStateOf<Int?>(null) }
-    var mostrarFeedback by rememberSaveable { mutableStateOf(false) }
+    var respuestaSeleccionada by rememberSaveable(idLeccion) { mutableStateOf<Int?>(null) }
+    var mostrarFeedback by rememberSaveable(idLeccion) { mutableStateOf(false) }
     var enviandoMedalla by remember { mutableStateOf(false) }
 
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
     val pokemonRepo = remember { PokemonRepository(context) }
     var pokemonGanado by remember { mutableStateOf<Pokemon?>(null) }
-    val esCorrecta = respuestaSeleccionada != null &&
+
+    val letraSeleccionada = when (respuestaSeleccionada) {
+        1 -> "A"
+        2 -> "B"
+        else -> ""
+    }
+    val esCorrecta = leccion != null && respuestaSeleccionada != null &&
             Validaciones.esRespuestaCorrecta(
-                seleccion = if (respuestaSeleccionada == 1) "Opción A" else "Opción B",
-                respuestaCorrecta = "Opción A"
+                seleccion = letraSeleccionada,
+                respuestaCorrecta = leccion.respuestaCorrecta
             )
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Lección ${leccion?.numero ?: ""}", fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+                title = {
+                    Text(
+                        "${materia.titulo} · Lección ${leccion?.numero ?: ""}",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 19.sp
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = navAtras) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Atrás", modifier = Modifier.size(28.dp))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Atrás",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = colores.principal)
             )
         }
     ) { padding ->
@@ -308,12 +390,17 @@ fun LeccionScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(padding)
                     .verticalScroll(scrollState)
                     .padding(20.dp)
             ) {
-                Text(text = leccion.titulo, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Color.Black)
+                Text(
+                    text = leccion.titulo,
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
                 Spacer(modifier = Modifier.height(12.dp))
 
                 TarjetaReproductorAudio(
@@ -323,49 +410,192 @@ fun LeccionScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = leccion.contenido,
-                    fontSize = 18.sp,
-                    lineHeight = 26.sp,
-                    color = Color.DarkGray
-                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(18.dp),
+                    colors = CardDefaults.cardColors(containerColor = colores.principal.copy(alpha = 0.10f)),
+                    border = BorderStroke(1.5.dp, colores.principal.copy(alpha = 0.35f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = leccion.iconoVisual,
+                            fontSize = 44.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = leccion.contenido,
+                            fontSize = 16.sp,
+                            lineHeight = 24.sp,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surface,
+                                border = BorderStroke(1.5.dp, colores.principal),
+                                modifier = Modifier.size(54.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(text = mascotaEmoji, fontSize = 30.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                border = BorderStroke(1.dp, colores.principal.copy(alpha = 0.4f)),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
+                                    Text(
+                                        text = "Pista de $mascotaNombre:",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = colores.principal
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = leccion.pistaMascota,
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F9FA)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Pregunta de comprobación:", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("¿Cuál es la respuesta correcta para completar esta lección?", fontSize = 14.sp, color = Color.Gray)
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Pregunta de comprobación:",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 15.sp,
+                            color = colores.principal
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = leccion.pregunta,
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
 
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(
-                                onClick = {
-                                    respuestaSeleccionada = 1
-                                    mostrarFeedback = true
-                                },
-                                enabled = !mostrarFeedback || esCorrecta,
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = if (respuestaSeleccionada == 1) Color(0xFFE8F5E9) else Color.White
-                                )
-                            ) { Text("Opción A", fontSize = 14.sp) }
+                        val colorFondoA = when {
+                            respuestaSeleccionada == 1 && esCorrecta -> Color(0xFFE8F5E9)
+                            respuestaSeleccionada == 1 && !esCorrecta -> Color(0xFFFFEBEE)
+                            else -> MaterialTheme.colorScheme.surface
+                        }
+                        val colorBordeA = when {
+                            respuestaSeleccionada == 1 && esCorrecta -> Color(0xFF2E7D32)
+                            respuestaSeleccionada == 1 && !esCorrecta -> Color(0xFFC62828)
+                            else -> colores.principal.copy(alpha = 0.4f)
+                        }
 
-                            OutlinedButton(
-                                onClick = {
-                                    respuestaSeleccionada = 2
-                                    mostrarFeedback = true
-                                },
-                                enabled = !mostrarFeedback,
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    containerColor = if (respuestaSeleccionada == 2) Color(0xFFFFEBEE) else Color.White
+                        val colorFondoB = when {
+                            respuestaSeleccionada == 2 && esCorrecta -> Color(0xFFE8F5E9)
+                            respuestaSeleccionada == 2 && !esCorrecta -> Color(0xFFFFEBEE)
+                            else -> MaterialTheme.colorScheme.surface
+                        }
+                        val colorBordeB = when {
+                            respuestaSeleccionada == 2 && esCorrecta -> Color(0xFF2E7D32)
+                            respuestaSeleccionada == 2 && !esCorrecta -> Color(0xFFC62828)
+                            else -> colores.principal.copy(alpha = 0.4f)
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                respuestaSeleccionada = 1
+                                mostrarFeedback = true
+                            },
+                            enabled = !mostrarFeedback,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.5.dp, colorBordeA),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = colorFondoA,
+                                disabledContainerColor = colorFondoA
+                            ),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(colores.principal),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("A", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = leccion.opcionA,
+                                    fontSize = 15.sp,
+                                    color = if (respuestaSeleccionada == 1) Color.Black else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Medium
                                 )
-                            ) { Text("Opción B", fontSize = 14.sp) }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedButton(
+                            onClick = {
+                                respuestaSeleccionada = 2
+                                mostrarFeedback = true
+                            },
+                            enabled = !mostrarFeedback,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            border = BorderStroke(1.5.dp, colorBordeB),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = colorFondoB,
+                                disabledContainerColor = colorFondoB
+                            ),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(28.dp)
+                                        .clip(CircleShape)
+                                        .background(colores.principal),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("B", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = leccion.opcionB,
+                                    fontSize = 15.sp,
+                                    color = if (respuestaSeleccionada == 2) Color.Black else MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
                         }
 
                         AnimatedVisibility(visible = mostrarFeedback) {
@@ -376,7 +606,7 @@ fun LeccionScreen(
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(
                                             text = "¡Correcto! Respuesta acertada.",
-                                            fontSize = 13.sp,
+                                            fontSize = 14.sp,
                                             color = Color(0xFF2E7D32),
                                             fontWeight = FontWeight.Bold
                                         )
@@ -388,7 +618,7 @@ fun LeccionScreen(
                                             Spacer(modifier = Modifier.width(6.dp))
                                             Text(
                                                 text = "Respuesta incorrecta. Puedes intentarlo nuevamente.",
-                                                fontSize = 13.sp,
+                                                fontSize = 14.sp,
                                                 color = Color(0xFFC62828),
                                                 fontWeight = FontWeight.Bold
                                             )

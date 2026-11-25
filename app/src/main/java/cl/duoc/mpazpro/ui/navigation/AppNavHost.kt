@@ -86,6 +86,11 @@ fun AppNavHost(
     val usuarioActual by repositorio.usuario.collectAsState()
     val esEstudiante = usuarioActual?.rol == RolUsuario.ESTUDIANTE
 
+    // MODIFICADO: lee en tiempo real la mascota elegida en Ajustes
+    val ajustesEstado by ajustesRepositorio.estado.collectAsState()
+    val mascotaEmojiActual = ajustesEstado.mascota.emoji
+    val mascotaNombreActual = ajustesEstado.nombreMascota.ifBlank { "Bruno" }
+
     NavHost(navController = navController, startDestination = destinoInicial) {
         composable(Rutas.BIENVENIDA) {
             BienvenidaScreen(nav = { navController.navigate(Rutas.LOGIN) })
@@ -139,10 +144,13 @@ fun AppNavHost(
         }
 
         composable(Rutas.ESTUDIANTE) {
+            // MODIFICADO: pasa emoji y nombre real de la mascota al Inicio
             InicioScreen(
                 navM = { materia -> navController.navigate("${Rutas.MATERIA_DETALLE}/${materia.name}") },
                 navP = { navController.navigate(Rutas.PERFIL) { launchSingleTop = true } },
-                navA = { navController.navigate(Rutas.AJUSTES) { launchSingleTop = true } }
+                navA = { navController.navigate(Rutas.AJUSTES) { launchSingleTop = true } },
+                mascotaEmoji = mascotaEmojiActual,
+                mascotaNombre = mascotaNombreActual
             )
         }
 
@@ -162,11 +170,14 @@ fun AppNavHost(
             val idLeccion = backStackEntry.arguments?.getString("idLeccion") ?: return@composable
             val materia = cl.duoc.mpazpro.domain.Materia.valueOf(materiaId)
 
+            // MODIFICADO: pasa emoji y nombre real de la mascota a las lecciones (sin tocar idUsuarioActual ni Pokémon)
             LeccionScreen(
                 materia = materia,
                 idLeccion = idLeccion,
                 navAtras = { navController.popBackStack() },
-                idUsuarioActual = usuarioActual?.id?.toIntOrNull() ?: 1
+                idUsuarioActual = usuarioActual?.id?.toIntOrNull() ?: 1,
+                mascotaEmoji = mascotaEmojiActual,
+                mascotaNombre = mascotaNombreActual
             )
         }
 

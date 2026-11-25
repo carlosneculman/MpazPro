@@ -232,7 +232,6 @@ class AjustesRepositorio(context: Context) {
 }
 
 fun generarColorSchemeInclusivo(estado: AjustesEstado): ColorScheme {
-    // 1. Filtros de daltonismo / grises
     when (estado.filtroColor) {
         FiltroColor.GRISES -> {
             return if (estado.tema == TemaPantalla.OSCURO || estado.tema == TemaPantalla.CONTRASTE) {
@@ -294,14 +293,13 @@ fun generarColorSchemeInclusivo(estado: AjustesEstado): ColorScheme {
         FiltroColor.SIN_FILTRO -> Unit
     }
 
-    // 2. Temas de pantalla principales
     return when (estado.tema) {
         TemaPantalla.NORMAL -> lightColorScheme(
             primary = Color(0xFF2554D7),
             onPrimary = Color.White,
             secondary = Color(0xFFFCC737),
             onSecondary = Color(0xFF1E1E1E),
-            background = Color(0xFFFFF8E8), // Crema cálido del diseño
+            background = Color(0xFFFFF8E8),
             onBackground = Color(0xFF1B1E28),
             surface = Color.White,
             onSurface = Color(0xFF1B1E28),
